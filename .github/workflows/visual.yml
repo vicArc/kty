@@ -30,11 +30,21 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm ci
       - name: Run visual tests
-        run: npx playwright test ${{ (github.event_name == 'workflow_dispatch' && inputs.update) && '--update-snapshots' || '' }}
+        id: run
         env:
           HOME: /root # ensure Playwright finds the image's pre-installed browsers
-      - name: Upload regenerated goldens
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update }}
+          FORCE_UPDATE: ${{ github.event_name == 'workflow_dispatch' && inputs.update }}
+        run: |
+          SNAP_DIR=tests/visual/visual.spec.js-snapshots
+          if [ "$FORCE_UPDATE" = "true" ] || [ -z "$(ls -A "$SNAP_DIR" 2>/dev/null)" ]; then
+            echo "No goldens present (or update requested) — generating baselines."
+            npx playwright test --update-snapshots
+            echo "generated=true" >> "$GITHUB_OUTPUT"
+          else
+            npx playwright test
+          fi
+      - name: Upload generated goldens
+        if: ${{ steps.run.outputs.generated == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: golden-screenshots
