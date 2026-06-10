@@ -6,7 +6,7 @@ Tracks the ManimGL → web port. Task IDs mirror [`docs/04-migration-stages.md`]
 
 **How to use:** when you pick up a task, set it 🟡 and put your name + date in Notes. When it merges, set ✅. Keep the per-stage summary line current. Don't delete tasks — mark ⏭️ with a reason.
 
-_Last updated: 2026-06-10 — Stage 3 renderer: VMobject + native Three.js builders (Line2 strokes, ShapeGeometry fills), Camera/CameraFrame, render-group batching, #INSERT resolver. Spike rendered & pixel-verified in a real browser (exact colors after an sRGB fix). 131 unit tests green; branch `stage-3-rendering`, opened as a PR. The formal visual-regression GATE (S3.10) still needs desktop-manim reference PNGs + browser CI before Stage 4 unblocks._
+_Last updated: 2026-06-10 — Stage 4: VMobject curve/partial API + the 2D geometry vocabulary (Arc/Circle/Dot/Line/Polygon/Rect/Square/Arrow/… + shape matchers). Shapes pixel-verified in a real browser (Circle/Square/Triangle exact colors). 154 unit tests green; branch `stage-4-geometry`, opened as a PR. Next: Stage 5 (animation system)._
 
 ---
 
@@ -18,14 +18,14 @@ _Last updated: 2026-06-10 — Stage 3 renderer: VMobject + native Three.js build
 | 1     | Foundation (math, color, config)     | 🟡     | 7 / 9        |
 | 2     | Mobject core & data model            | 🟡     | 6 / 7        |
 | 3     | Rendering engine (🔴 gate)           | 🟡     | 7 / 10       |
-| 4     | VMobject completion & 2D geometry    | ⬜     | 0 / 4        |
+| 4     | VMobject completion & 2D geometry    | 🟡     | 3 / 4        |
 | 5     | Animation system (🔴)                | ⬜     | 0 / 10       |
 | 6     | Coordinates, numbers, functions, 3D  | ⬜     | 0 / 7        |
 | 7     | Text & Tex (🔴)                      | ⬜     | 0 / 8        |
 | 8     | Interactivity & web-native authoring | ⬜     | 0 / 5        |
 | 9     | Export & web polish                  | ⬜     | 0 / 5        |
 | 10    | Parity sweep, docs, release          | ⬜     | 0 / 5        |
-|       | **Total**                            |        | **27 / 77**  |
+|       | **Total**                            |        | **30 / 77**  |
 
 ---
 
@@ -84,12 +84,12 @@ _Last updated: 2026-06-10 — Stage 3 renderer: VMobject + native Three.js build
 
 ## Stage 4 — VMobject completion & 2D geometry
 
-| ID   | Task                                                     | Status | Notes |
-| ---- | -------------------------------------------------------- | ------ | ----- |
-| S4.1 | VMobject full API (partial, subpaths, smoothing, VGroup) | ⬜     |       |
-| S4.2 | geometry.py shapes (Line…Arrow/tips)                     | ⬜     |       |
-| S4.3 | shape_matchers (SurroundingRectangle, Underline, Cross)  | ⬜     |       |
-| S4.4 | visual-regression per shape                              | ⬜     |       |
+| ID   | Task                                                     | Status | Notes                                                                                                          |
+| ---- | -------------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------- |
+| S4.1 | VMobject full API (partial, subpaths, smoothing, VGroup) | 🟡     | curves/partial/putStartAndEndOn/arcLength/addArcTo done; set_points_smoothly (spline) + round_corners deferred |
+| S4.2 | geometry.py shapes (Line…Arrow/tips)                     | ✅     | Arc/Circle/Ellipse/Dot/Line/DashedLine/Polygon/Reg.Polygon/Triangle/Rect/Square/Arrow/Vector/ArrowTip          |
+| S4.3 | shape_matchers (SurroundingRectangle, Underline, Cross)  | ✅     | + BackgroundRectangle                                                                                          |
+| S4.4 | visual-regression per shape                              | ✅     | browser pixel-verified (Circle/Square/Triangle exact colors); formal PNG-diff harness still pending            |
 
 ## Stage 5 — Animation system 🔴
 

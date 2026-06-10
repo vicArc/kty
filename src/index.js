@@ -24,6 +24,11 @@ export * from './mobject/value_tracker.js';
 
 // Rendering engine (Stage 3)
 export * from './mobject/vmobject.js';
+
+// 2D geometry (Stage 4)
+export * from './mobject/geometry.js';
+export * from './mobject/shape_matchers.js';
+
 export * from './camera/camera_frame.js';
 export * from './camera/camera.js';
 export * from './render/render_backend.js';

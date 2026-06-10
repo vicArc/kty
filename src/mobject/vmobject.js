@@ -6,8 +6,27 @@
 import { Mobject } from './mobject.js';
 import { DEFAULT_STROKE_COLOR, DEFAULT_FILL_COLOR } from '../foundation/constants.js';
 import { colorToRgb, rgbToHex } from '../foundation/color.js';
-import { midpoint } from '../foundation/space_ops.js';
+import {
+  midpoint,
+  getNorm,
+  angleOfVector,
+  rotationMatrix,
+  applyMatrix,
+} from '../foundation/space_ops.js';
+import {
+  bezier,
+  integerInterpolate,
+  inverseInterpolate,
+  partialQuadraticBezierPoints,
+} from '../foundation/bezier.js';
 import { listify, resizeWithInterpolation } from '../foundation/iterables.js';
+
+const sub = (a, b) => a.map((x, i) => x - b[i]);
+const polyLineLength = (pts) => {
+  let s = 0;
+  for (let i = 1; i < pts.length; i++) s += getNorm(sub(pts[i], pts[i - 1]));
+  return s;
+};
 
 export const VMOBJECT_SCHEMA = [
   ['point', 3],
@@ -221,8 +240,173 @@ export class VMobject extends Mobject {
 
   /** Anchor points (every other point) across all subpaths. */
   getAnchors() {
-    return this.getSubpaths().flatMap((sub) => sub.filter((_, i) => i % 2 === 0));
+    return this.getSubpaths().flatMap((s) => s.filter((_, i) => i % 2 === 0));
   }
+
+  // --- curve information ---
+  getNumCurves() {
+    return Math.floor(this.getNumPoints() / 2);
+  }
+
+  getNthCurvePoints(n) {
+    const pts = this.getPoints();
+    return [pts[2 * n], pts[2 * n + 1], pts[2 * n + 2]];
+  }
+
+  getNthCurveFunction(n) {
+    return bezier(this.getNthCurvePoints(n));
+  }
+
+  getBezierTuples() {
+    const out = [];
+    for (let n = 0; n < this.getNumCurves(); n++) out.push(this.getNthCurvePoints(n));
+    return out;
+  }
+
+  getStartAnchors() {
+    const pts = this.getPoints();
+    const out = [];
+    for (let i = 0; i < pts.length - 1; i += 2) out.push(pts[i]);
+    return out;
+  }
+
+  getStartAndEnd() {
+    return [this.getStart(), this.getEnd()];
+  }
+
+  /** Point a proportion alpha along the path, assuming equal-length curves. */
+  quickPointFromProportion(alpha) {
+    const n = this.getNumCurves();
+    if (n === 0) return this.getCenter();
+    const [i, residue] = integerInterpolate(0, n, alpha);
+    return this.getNthCurveFunction(i)(residue);
+  }
+
+  /** Curve index + sub-proportion for an arc-length proportion alpha. */
+  curveAndPropOfPartialPoint(alpha) {
+    if (alpha === 0) return [0, 0];
+    const partials = [0];
+    for (const tup of this.getBezierTuples()) {
+      const arclen = getNorm(sub(tup[1], tup[0])) < 1e-8 ? 0 : getNorm(sub(tup[2], tup[0]));
+      partials.push(partials[partials.length - 1] + arclen);
+    }
+    const full = partials[partials.length - 1];
+    if (full === 0) return [partials.length, 1];
+    let index = partials.findIndex((x) => x >= full * alpha);
+    if (index < 0) index = partials.length - 1;
+    const residue = inverseInterpolate(partials[index - 1] / full, partials[index] / full, alpha);
+    return [index - 1, residue];
+  }
+
+  pointFromProportion(alpha) {
+    if (alpha <= 0) return this.getStart();
+    if (alpha >= 1) return this.getEnd();
+    if (this.getNumPoints() === 0) return this.getCenter();
+    const [index, residue] = this.curveAndPropOfPartialPoint(alpha);
+    return this.getNthCurveFunction(index)(residue);
+  }
+
+  getArcLength() {
+    const pts = this.getPoints();
+    const innerLen = polyLineLength(pts.filter((_, i) => i % 2 === 0));
+    const outerLen = polyLineLength(pts);
+    return innerLen + (outerLen - innerLen) / 3;
+  }
+
+  // --- path editing ---
+  addSubpath(points) {
+    if (!this.hasPoints()) {
+      this.setPointsAsQuads(points);
+      return this;
+    }
+    const last = this.getLastPoint();
+    if (getNorm(sub(points[0], last)) > 1e-6) this.startNewPath(points[0]);
+    this.appendPoints(points.slice(1));
+    return this;
+  }
+
+  /** Append an arc of the given angle from the current end to `point` (2D). */
+  addArcTo(point, angle, nComponents = null) {
+    if (Math.abs(angle) < 1e-3) return this.addLineTo(point);
+    const n = nComponents ?? Math.ceil((8 * Math.abs(angle)) / (2 * Math.PI));
+    // Build a unit arc, then rotate/scale/translate it onto [end, point].
+    const arc = quadraticBezierPointsForArcLocal(angle, n);
+    const end = this.getLastPoint();
+    const target = sub(point, end);
+    const curr = sub(arc[arc.length - 1], arc[0]);
+    const rot = rotationMatrix(angleOfVector(target) - angleOfVector(curr), [0, 0, 1]);
+    const scale = getNorm(target) / getNorm(curr);
+    const mapped = arc.map((p) => {
+      const r = applyMatrix(rot, p).map((c) => c * scale);
+      return r.map((c, i) => c + end[i] - applyMatrix(rot, arc[0])[i] * scale);
+    });
+    this.appendPoints(mapped.slice(1));
+    return this;
+  }
+
+  putStartAndEndOn(start, end) {
+    const [cs, ce] = this.getStartAndEnd();
+    const currVect = sub(ce, cs);
+    if (getNorm(currVect) === 0) throw new Error('Cannot position endpoints of a closed loop');
+    const targetVect = sub(end, start);
+    this.scale(getNorm(targetVect) / getNorm(currVect), { aboutPoint: cs });
+    this.rotate(angleOfVector(targetVect) - angleOfVector(currVect));
+    this.shift(sub(start, this.getStart()));
+    return this;
+  }
+
+  /** Replace this path with the [a,b] portion of `vmobject` (keeps point count). */
+  pointwiseBecomePartial(vmobject, a, b) {
+    const vmPoints = vmobject.getPoints();
+    this.subpathStartIndices = [...(vmobject.subpathStartIndices ?? [0])];
+    if (a <= 0 && b >= 1) {
+      this.setPoints(vmPoints);
+      return this;
+    }
+    const numCurves = vmobject.getNumCurves();
+    const newPoints = vmPoints.map((p) => [...p]);
+    if (numCurves === 0) {
+      this.setPoints(newPoints);
+      return this;
+    }
+    const [lowerIndex, lowerResidue] = integerInterpolate(0, numCurves, a);
+    const [upperIndex, upperResidue] = integerInterpolate(0, numCurves, b);
+    const i1 = 2 * lowerIndex;
+    const i4 = 2 * upperIndex + 3;
+    if (lowerIndex === upperIndex) {
+      const tup = partialQuadraticBezierPoints(
+        vmPoints.slice(i1, i1 + 3),
+        lowerResidue,
+        upperResidue
+      );
+      for (let i = 0; i < i1; i++) newPoints[i] = [...tup[0]];
+      for (let i = i1; i < i4 && i - i1 < tup.length; i++) newPoints[i] = [...tup[i - i1]];
+      for (let i = i4; i < newPoints.length; i++) newPoints[i] = [...tup[2]];
+    } else {
+      const lowTup = partialQuadraticBezierPoints(vmPoints.slice(i1, i1 + 3), lowerResidue, 1);
+      const i3 = 2 * upperIndex;
+      const highTup = partialQuadraticBezierPoints(vmPoints.slice(i3, i3 + 3), 0, upperResidue);
+      for (let i = 0; i < i1; i++) newPoints[i] = [...lowTup[0]];
+      for (let i = 0; i < 3; i++) newPoints[i1 + i] = [...lowTup[i]];
+      for (let i = 0; i < 3; i++) newPoints[i3 + i] = [...highTup[i]];
+      for (let i = i4; i < newPoints.length; i++) newPoints[i] = [...highTup[2]];
+    }
+    this.setPoints(newPoints);
+    return this;
+  }
+}
+
+// Local copy to avoid a circular import with foundation/bezier arc helper.
+function quadraticBezierPointsForArcLocal(angle, nComponents) {
+  const nPoints = 2 * nComponents + 1;
+  const points = [];
+  for (let i = 0; i < nPoints; i++) {
+    const a = (angle * i) / (nPoints - 1);
+    points.push([Math.cos(a), Math.sin(a), 0]);
+  }
+  const scale = 1 / Math.cos(angle / nComponents / 2);
+  for (let i = 1; i < nPoints; i += 2) points[i] = points[i].map((c) => c * scale);
+  return points;
 }
 
 export class VGroup extends VMobject {
