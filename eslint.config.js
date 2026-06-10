@@ -10,5 +10,9 @@ export default [
       sourceType: 'module',
       globals: { ...globals.browser, ...globals.node },
     },
+    rules: {
+      // Allow intentionally-unused args/vars prefixed with _ (e.g. contract stubs).
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
   },
 ];

@@ -6,7 +6,7 @@ Tracks the ManimGL → web port. Task IDs mirror [`docs/04-migration-stages.md`]
 
 **How to use:** when you pick up a task, set it 🟡 and put your name + date in Notes. When it merges, set ✅. Keep the per-stage summary line current. Don't delete tasks — mark ⏭️ with a reason.
 
-_Last updated: 2026-06-10 — Stage 2 Mobject core ported (data store + Mobject/Group/Point/ValueTracker; 102 unit tests green) on branch `stage-2-mobject`, opened as a PR. Stage 3 (renderer gate) is next._
+_Last updated: 2026-06-10 — Stage 3 renderer: VMobject + native Three.js builders (Line2 strokes, ShapeGeometry fills), Camera/CameraFrame, render-group batching, #INSERT resolver. Spike rendered & pixel-verified in a real browser (exact colors after an sRGB fix). 131 unit tests green; branch `stage-3-rendering`, opened as a PR. The formal visual-regression GATE (S3.10) still needs desktop-manim reference PNGs + browser CI before Stage 4 unblocks._
 
 ---
 
@@ -17,7 +17,7 @@ _Last updated: 2026-06-10 — Stage 2 Mobject core ported (data store + Mobject/
 | 0     | Repo & tooling foundation            | ✅     | 7 / 7        |
 | 1     | Foundation (math, color, config)     | 🟡     | 7 / 9        |
 | 2     | Mobject core & data model            | 🟡     | 6 / 7        |
-| 3     | Rendering engine (🔴 gate)           | ⬜     | 0 / 10       |
+| 3     | Rendering engine (🔴 gate)           | 🟡     | 7 / 10       |
 | 4     | VMobject completion & 2D geometry    | ⬜     | 0 / 4        |
 | 5     | Animation system (🔴)                | ⬜     | 0 / 10       |
 | 6     | Coordinates, numbers, functions, 3D  | ⬜     | 0 / 7        |
@@ -25,7 +25,7 @@ _Last updated: 2026-06-10 — Stage 2 Mobject core ported (data store + Mobject/
 | 8     | Interactivity & web-native authoring | ⬜     | 0 / 5        |
 | 9     | Export & web polish                  | ⬜     | 0 / 5        |
 | 10    | Parity sweep, docs, release          | ⬜     | 0 / 5        |
-|       | **Total**                            |        | **20 / 77**  |
+|       | **Total**                            |        | **27 / 77**  |
 
 ---
 
@@ -69,18 +69,18 @@ _Last updated: 2026-06-10 — Stage 2 Mobject core ported (data store + Mobject/
 
 ## Stage 3 — Rendering engine 🔴 (GATE)
 
-| ID    | Task                                               | Status | Notes      |
-| ----- | -------------------------------------------------- | ------ | ---------- |
-| S3.1  | RenderBackend contract + ThreeRenderer skeleton    | ⬜     |            |
-| S3.2  | Camera + CameraFrame                               | ⬜     |            |
-| S3.3  | VMobject path → CurvePath/QuadraticBezierCurve3    | ⬜     |            |
-| S3.4  | stroke → Line2/LineMaterial                        | ⬜     |            |
-| S3.5  | fill → Shape/ShapeGeometry                         | ⬜     |            |
-| S3.6  | render-group batching + renderOrder/z_index        | ⬜     |            |
-| S3.7  | #INSERT shader resolver                            | ⬜     |            |
-| S3.8  | de-risking spike (circle/star/squiggle/Tex)        | ⬜     |            |
-| S3.9  | fidelity fallbacks (winding/width/AA) as needed    | ⬜     |            |
-| S3.10 | **GATE:** spike passes visual-regression threshold | ⛔     | blocks S4+ |
+| ID    | Task                                               | Status | Notes                                                                                                                  |
+| ----- | -------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
+| S3.1  | RenderBackend contract + ThreeRenderer skeleton    | ✅     | RenderBackend + ThreeRenderer (build/attach/render)                                                                    |
+| S3.2  | Camera + CameraFrame                               | ✅     | CameraFrame mobject drives OrthographicCamera                                                                          |
+| S3.3  | VMobject path → CurvePath/QuadraticBezierCurve3    | ✅     | VMobject path model + shape/polyline builders                                                                          |
+| S3.4  | stroke → Line2/LineMaterial                        | ✅     | fat world-unit lines per subpath                                                                                       |
+| S3.5  | fill → Shape/ShapeGeometry                         | ✅     | THREE.Shape/ShapeGeometry (earcut)                                                                                     |
+| S3.6  | render-group batching + renderOrder/z_index        | ✅     | assembleRenderGroups (stable z-order)                                                                                  |
+| S3.7  | #INSERT shader resolver                            | ✅     | resolveInserts + dedupeUniforms                                                                                        |
+| S3.8  | de-risking spike (circle/star/squiggle/Tex)        | 🟡     | rendered in-browser; pixel-verified colors (#58C4DD/#333 exact). Tex deferred to S7; reference-PNG diff pending        |
+| S3.9  | fidelity fallbacks (winding/width/AA) as needed    | 🟡     | sRGB color-management fixed via spike; winding/per-vertex-width/AA fallbacks deferred until needed                     |
+| S3.10 | **GATE:** spike passes visual-regression threshold | 🟡     | functional pixel check passes; formal Playwright+pixelmatch vs desktop-manim PNGs needs reference renders + browser CI |
 
 ## Stage 4 — VMobject completion & 2D geometry
 

@@ -7,14 +7,21 @@
     <style>
       body {
         margin: 0;
-        background: #333;
+        background: #1a1a1a;
         color: #ddd;
         font:
           14px/1.5 system-ui,
           sans-serif;
       }
       #app {
-        padding: 2rem;
+        padding: 1.5rem;
+      }
+      canvas {
+        width: 800px;
+        max-width: 100%;
+        aspect-ratio: 16/9;
+        border-radius: 8px;
+        box-shadow: 0 4px 24px #0008;
       }
       code {
         color: #58c4dd;
@@ -23,14 +30,57 @@
   </head>
   <body>
     <div id="app">
-      <h1>kty</h1>
-      <p>Stage 0 scaffold. The engine renders here once Stage 3 lands.</p>
+      <h1>kty — Stage 3 render spike</h1>
       <p id="status">loading…</p>
+      <canvas id="stage"></canvas>
     </div>
     <script type="module">
-      import { VERSION } from './src/index.js';
+      import {
+        VERSION,
+        VMobject,
+        VGroup,
+        ThreeRenderer,
+        quadraticBezierPointsForArc,
+        TAU,
+      } from './src/index.js';
+
+      // A blue filled circle, a yellow concave star, and a white bezier squiggle —
+      // the de-risking spike shapes (docs/02), drawn via native Three.js objects.
+      const circle = new VMobject()
+        .setPointsAsQuads(quadraticBezierPointsForArc(TAU))
+        .scale(2)
+        .shift([-3.5, 0, 0])
+        .setFill('#58C4DD', 1)
+        .setStroke('#C7E9F1', 4, 1);
+
+      const starPts = [];
+      for (let i = 0; i <= 10; i++) {
+        const a = (TAU * i) / 10 - Math.PI / 2;
+        const r = i % 2 === 0 ? 2 : 0.8;
+        starPts.push([Math.cos(a) * r, Math.sin(a) * r, 0]);
+      }
+      const star = new VMobject()
+        .setPointsAsCorners(starPts)
+        .setFill('#FFFF00', 0.9)
+        .setStroke('#F4D345', 5, 1);
+
+      const squiggle = new VMobject();
+      squiggle.startNewPath([0, 0, 0]);
+      for (let i = 0; i < 4; i++) {
+        const x = i + 1;
+        squiggle.addQuadraticBezierCurveTo([x - 0.5, i % 2 ? 1.5 : -1.5, 0], [x, 0, 0]);
+      }
+      squiggle.shift([2.2, 0, 0]).setStroke('#FFFFFF', 6, 1);
+
+      const scene = new VGroup(circle, star, squiggle);
+
+      const canvas = document.getElementById('stage');
+      const renderer = new ThreeRenderer({ width: 1280, height: 720 }).attach(canvas);
+      renderer.render([scene]);
+
       document.getElementById('status').innerHTML =
-        `kty <code>v${VERSION}</code> loaded. Three.js renderer arrives in Stage 3.`;
+        `kty <code>v${VERSION}</code> — native Three.js render of the spike shapes ` +
+        `(<code>Line2</code> strokes + <code>ShapeGeometry</code> fills).`;
     </script>
   </body>
 </html>
