@@ -29,6 +29,8 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "mathjax-full": "^3.2.1",
+    "opentype.js": "^2.0.0",
     "three": "^0.169.0"
   },
   "devDependencies": {
