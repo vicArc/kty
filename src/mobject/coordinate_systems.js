@@ -4,7 +4,8 @@
 import { VGroup } from './vmobject.js';
 import { Line } from './geometry.js';
 import { ParametricCurve } from './functions.js';
-import { ORIGIN, PI, COLORS } from '../foundation/constants.js';
+import { DecimalNumber } from './numbers.js';
+import { ORIGIN, DOWN, LEFT, PI, MED_SMALL_BUFF, COLORS } from '../foundation/constants.js';
 
 const fullRange = (r) => (r.length === 2 ? [r[0], r[1], 1] : r);
 
@@ -86,6 +87,31 @@ export class NumberLine extends Line {
     this.ticks = ticks;
     return this;
   }
+
+  /** Add DecimalNumber labels at tick positions. */
+  addNumbers(
+    values = null,
+    {
+      excluding = [0],
+      direction = DOWN,
+      buff = MED_SMALL_BUFF,
+      numDecimalPlaces = 0,
+      fontSize = 24,
+      ...opts
+    } = {}
+  ) {
+    const xs = values ?? this.getTickRange();
+    const numbers = new VGroup();
+    for (const x of xs) {
+      if (excluding && excluding.some((e) => Math.abs(e - x) < 1e-9)) continue;
+      const label = new DecimalNumber(x, { numDecimalPlaces, fontSize, ...opts });
+      label.nextTo(this.numberToPoint(x), direction, buff);
+      numbers.add(label);
+    }
+    this.add(numbers);
+    this.numbers = numbers;
+    return numbers;
+  }
 }
 
 export class Axes extends VGroup {
@@ -116,6 +142,14 @@ export class Axes extends VGroup {
 
   getAxes() {
     return [this.xAxis, this.yAxis];
+  }
+
+  /** Add numeric labels to both axes (excluding the origin by default). */
+  addCoordinateLabels(xValues = null, yValues = null, opts = {}) {
+    this.coordinateLabels = new VGroup();
+    this.coordinateLabels.add(this.xAxis.addNumbers(xValues, { direction: DOWN, ...opts }));
+    this.coordinateLabels.add(this.yAxis.addNumbers(yValues, { direction: LEFT, ...opts }));
+    return this.coordinateLabels;
   }
 
   getOrigin() {
