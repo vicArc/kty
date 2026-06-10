@@ -14,6 +14,22 @@ export function lerp(a, b, alpha) {
 }
 
 /**
+ * Resize a flat typed array of `itemSize`-tuples to `length` rows by tiling /
+ * truncating (numpy.resize semantics) — manim's default resize_array.
+ */
+export function resizeArrayTyped(arr, length, itemSize) {
+  const rows = arr.length / itemSize;
+  if (rows === length) return arr;
+  const out = new Float32Array(length * itemSize);
+  if (rows === 0) return out;
+  for (let i = 0; i < length; i++) {
+    const src = (i % rows) * itemSize;
+    for (let j = 0; j < itemSize; j++) out[i * itemSize + j] = arr[src + j];
+  }
+  return out;
+}
+
+/**
  * Resize a flat typed array of `itemSize`-tuples to `length` rows by sampling
  * indices floor(i * rows / length) — manim's resize_preserving_order.
  */
