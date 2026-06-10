@@ -16,3 +16,8 @@ export * from './foundation/paths.js';
 export * from './foundation/color.js';
 export * from './foundation/arrays.js';
 export * from './foundation/config.js';
+
+// Data + Mobject core (Stage 2)
+export * from './data/mobject_data.js';
+export * from './mobject/mobject.js';
+export * from './mobject/value_tracker.js';

@@ -6,7 +6,7 @@ Tracks the ManimGL → web port. Task IDs mirror [`docs/04-migration-stages.md`]
 
 **How to use:** when you pick up a task, set it 🟡 and put your name + date in Notes. When it merges, set ✅. Keep the per-stage summary line current. Don't delete tasks — mark ⏭️ with a reason.
 
-_Last updated: 2026-06-10 — Stage 1 foundation ported (12 modules, 68 unit tests green) on branch `stage-1-foundation`, opened as a PR. A few sub-parts intentionally deferred to the stage that first needs them (see notes)._
+_Last updated: 2026-06-10 — Stage 2 Mobject core ported (data store + Mobject/Group/Point/ValueTracker; 102 unit tests green) on branch `stage-2-mobject`, opened as a PR. Stage 3 (renderer gate) is next._
 
 ---
 
@@ -16,7 +16,7 @@ _Last updated: 2026-06-10 — Stage 1 foundation ported (12 modules, 68 unit tes
 | ----- | ------------------------------------ | ------ | ------------ |
 | 0     | Repo & tooling foundation            | ✅     | 7 / 7        |
 | 1     | Foundation (math, color, config)     | 🟡     | 7 / 9        |
-| 2     | Mobject core & data model            | ⬜     | 0 / 7        |
+| 2     | Mobject core & data model            | 🟡     | 6 / 7        |
 | 3     | Rendering engine (🔴 gate)           | ⬜     | 0 / 10       |
 | 4     | VMobject completion & 2D geometry    | ⬜     | 0 / 4        |
 | 5     | Animation system (🔴)                | ⬜     | 0 / 10       |
@@ -25,7 +25,7 @@ _Last updated: 2026-06-10 — Stage 1 foundation ported (12 modules, 68 unit tes
 | 8     | Interactivity & web-native authoring | ⬜     | 0 / 5        |
 | 9     | Export & web polish                  | ⬜     | 0 / 5        |
 | 10    | Parity sweep, docs, release          | ⬜     | 0 / 5        |
-|       | **Total**                            |        | **14 / 77**  |
+|       | **Total**                            |        | **20 / 77**  |
 
 ---
 
@@ -57,15 +57,15 @@ _Last updated: 2026-06-10 — Stage 1 foundation ported (12 modules, 68 unit tes
 
 ## Stage 2 — Mobject core & data model
 
-| ID   | Task                                     | Status | Notes |
-| ---- | ---------------------------------------- | ------ | ----- |
-| S2.1 | MobjectData SoA column store             | ⬜     |       |
-| S2.2 | Mobject base (family, add/remove, clone) | ⬜     |       |
-| S2.3 | Transforms + bbox + positioning helpers  | ⬜     |       |
-| S2.4 | color/opacity/style on data columns      | ⬜     |       |
-| S2.5 | updaters (time + non-time)               | ⬜     |       |
-| S2.6 | Group, Point, value_tracker              | ⬜     |       |
-| S2.7 | unit tests vs Python fixtures            | ⬜     |       |
+| ID   | Task                                     | Status | Notes                                                                             |
+| ---- | ---------------------------------------- | ------ | --------------------------------------------------------------------------------- |
+| S2.1 | MobjectData SoA column store             | ✅     | column store + defaults + resize modes                                            |
+| S2.2 | Mobject base (family, add/remove, clone) | ✅     | family tree, add/remove, copy/become/saveState                                    |
+| S2.3 | Transforms + bbox + positioning helpers  | ✅     | shift/scale/rotate/stretch/applyMatrix; bbox; nextTo/moveTo/toEdge/alignTo/setX   |
+| S2.4 | color/opacity/style on data columns      | ✅     | setColor/setOpacity/gradient via rgba column                                      |
+| S2.5 | updaters (time + non-time)               | ✅     | add/remove/clear/suspend/resume + update(dt)                                      |
+| S2.6 | Group, Point, value_tracker              | ✅     | + Exponential/Complex value trackers                                              |
+| S2.7 | unit tests vs Python fixtures            | 🟡     | 47 analytic unit tests (data+mobject+VT) pass; Python fixture-dump still deferred |
 
 ## Stage 3 — Rendering engine 🔴 (GATE)
 
