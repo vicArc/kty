@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>kty — dev harness</title>
+    <style>
+      body {
+        margin: 0;
+        background: #333;
+        color: #ddd;
+        font:
+          14px/1.5 system-ui,
+          sans-serif;
+      }
+      #app {
+        padding: 2rem;
+      }
+      code {
+        color: #58c4dd;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <h1>kty</h1>
+      <p>Stage 0 scaffold. The engine renders here once Stage 3 lands.</p>
+      <p id="status">loading…</p>
+    </div>
+    <script type="module">
+      import { VERSION } from './src/index.js';
+      document.getElementById('status').innerHTML =
+        `kty <code>v${VERSION}</code> loaded. Three.js renderer arrives in Stage 3.`;
+    </script>
+  </body>
+</html>

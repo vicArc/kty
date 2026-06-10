@@ -1,0 +1,42 @@
+{
+  "name": "kty",
+  "version": "0.0.0",
+  "description": "ManimGL ported to the web — a real-time, interactive math-animation engine on Three.js + WebGL2.",
+  "type": "module",
+  "license": "MIT",
+  "author": "vicArc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vicArc/kty.git"
+  },
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "eslint": "^9.13.0",
+    "globals": "^15.11.0",
+    "prettier": "^3.3.3",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.0"
+  }
+}

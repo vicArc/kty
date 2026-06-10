@@ -1,0 +1,32 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  # Job name must match the required status check configured on `main`
+  # (see docs/07-repo-setup-and-lockdown.md).
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run test
+      - run: npm run build
+      # Visual-regression (Playwright + pixelmatch) is added in Stage 3,
+      # once the renderer exists. It will emit reports/junit/visual.xml.
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit
+          path: reports/
+          if-no-files-found: ignore
