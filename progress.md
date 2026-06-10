@@ -6,7 +6,7 @@ Tracks the ManimGL → web port. Task IDs mirror [`docs/04-migration-stages.md`]
 
 **How to use:** when you pick up a task, set it 🟡 and put your name + date in Notes. When it merges, set ✅. Keep the per-stage summary line current. Don't delete tasks — mark ⏭️ with a reason.
 
-_Last updated: 2026-06-10 — Stage 0 complete: scaffold pushed to main, CI green, branch protection active. Stage 1 next._
+_Last updated: 2026-06-10 — Stage 1 foundation ported (12 modules, 68 unit tests green) on branch `stage-1-foundation`, opened as a PR. A few sub-parts intentionally deferred to the stage that first needs them (see notes)._
 
 ---
 
@@ -15,7 +15,7 @@ _Last updated: 2026-06-10 — Stage 0 complete: scaffold pushed to main, CI gree
 | Stage | Title                                | Status | Done / Total |
 | ----- | ------------------------------------ | ------ | ------------ |
 | 0     | Repo & tooling foundation            | ✅     | 7 / 7        |
-| 1     | Foundation (math, color, config)     | ⬜     | 0 / 9        |
+| 1     | Foundation (math, color, config)     | 🟡     | 7 / 9        |
 | 2     | Mobject core & data model            | ⬜     | 0 / 7        |
 | 3     | Rendering engine (🔴 gate)           | ⬜     | 0 / 10       |
 | 4     | VMobject completion & 2D geometry    | ⬜     | 0 / 4        |
@@ -25,35 +25,35 @@ _Last updated: 2026-06-10 — Stage 0 complete: scaffold pushed to main, CI gree
 | 8     | Interactivity & web-native authoring | ⬜     | 0 / 5        |
 | 9     | Export & web polish                  | ⬜     | 0 / 5        |
 | 10    | Parity sweep, docs, release          | ⬜     | 0 / 5        |
-|       | **Total**                            |        | **7 / 77**   |
+|       | **Total**                            |        | **14 / 77**  |
 
 ---
 
 ## Stage 0 — Repo & tooling foundation
 
-| ID   | Task                                                                                       | Status | Notes         |
-| ---- | ------------------------------------------------------------------------------------------ | ------ | ------------- |
-| S0.1 | npm init (ESM) + core deps (three, vite, vitest, eslint, prettier)                         | ✅     | playwright/pixelmatch deferred to Stage 3 |
-| S0.2 | Vite config + folder scaffold                                                              | ✅     |               |
-| S0.3 | ESLint flat config + Prettier (+ optional jsconfig checkJs)                                | ✅     |               |
-| S0.4 | Vitest + JUnit reporter; smoke test green                                                  | ✅     | 3 tests pass  |
-| S0.5 | GitHub Actions CI (lint+format+unit+build)                                                 | ✅     | run #1 success in 21s |
-| S0.6 | Repo write-protection: MIT LICENSE + protect main (stays public)                           | ✅     | ruleset protect-main active |
-| S0.7 | First commit + push; verify CI + protection                                                | ✅     | pushed to main |
+| ID   | Task                                                               | Status | Notes                                     |
+| ---- | ------------------------------------------------------------------ | ------ | ----------------------------------------- |
+| S0.1 | npm init (ESM) + core deps (three, vite, vitest, eslint, prettier) | ✅     | playwright/pixelmatch deferred to Stage 3 |
+| S0.2 | Vite config + folder scaffold                                      | ✅     |                                           |
+| S0.3 | ESLint flat config + Prettier (+ optional jsconfig checkJs)        | ✅     |                                           |
+| S0.4 | Vitest + JUnit reporter; smoke test green                          | ✅     | 3 tests pass                              |
+| S0.5 | GitHub Actions CI (lint+format+unit+build)                         | ✅     | run #1 success in 21s                     |
+| S0.6 | Repo write-protection: MIT LICENSE + protect main (stays public)   | ✅     | ruleset protect-main active               |
+| S0.7 | First commit + push; verify CI + protection                        | ✅     | pushed to main                            |
 
 ## Stage 1 — Foundation
 
-| ID   | Task                                              | Status | Notes |
-| ---- | ------------------------------------------------- | ------ | ----- |
-| S1.1 | constants (directions, angles, frame, colors)     | ⬜     |       |
-| S1.2 | config module + reactive store                    | ⬜     |       |
-| S1.3 | color (conversions, gradients, colormaps)         | ⬜     |       |
-| S1.4 | iterables, dict_ops, simple_functions, family_ops | ⬜     |       |
-| S1.5 | space_ops (+ earcut)                              | ⬜     |       |
-| S1.6 | bezier (+ banded solver, cubic→quad)              | ⬜     |       |
-| S1.7 | rate_functions + paths                            | ⬜     |       |
-| S1.8 | array-helper module (data-store backing)          | ⬜     |       |
-| S1.9 | parity unit tests vs Python fixtures              | ⬜     |       |
+| ID   | Task                                              | Status | Notes                                                                                                      |
+| ---- | ------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------- |
+| S1.1 | constants (directions, angles, frame, colors)     | ✅     | full palette + directions + buffers                                                                        |
+| S1.2 | config module + reactive store                    | ✅     | ConfigStore + DEFAULT_CONFIG                                                                               |
+| S1.3 | color (conversions, gradients, colormaps)         | 🟡     | conversions/gradient/interp done; HSL + matplotlib colormaps deferred to Stage 6                           |
+| S1.4 | iterables, dict_ops, simple_functions, family_ops | ✅     |                                                                                                            |
+| S1.5 | space_ops (+ earcut)                              | 🟡     | vector/rotation core done; earcut + find_intersection/z_to_vector deferred to Stage 3 (needed by VMobject) |
+| S1.6 | bezier (+ banded solver, cubic→quad)              | 🟡     | eval/partial/interp/arc done; smooth-spline banded solver + cubic→quad deferred to Stage 3/4               |
+| S1.7 | rate_functions + paths                            | ✅     |                                                                                                            |
+| S1.8 | array-helper module (data-store backing)          | ✅     | typed-column lerp/resize helpers                                                                           |
+| S1.9 | parity unit tests vs Python fixtures              | 🟡     | 68 analytic unit tests pass; Python fixture-dump harness deferred                                          |
 
 ## Stage 2 — Mobject core & data model
 
