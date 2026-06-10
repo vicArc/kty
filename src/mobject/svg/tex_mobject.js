@@ -50,12 +50,17 @@ function collectGlyphs(adaptor, node, tf, glyphs) {
   for (const child of adaptor.childNodes(node)) collectGlyphs(adaptor, child, tf2, glyphs);
 }
 
+// MathJax SVG is laid out for a y-DOWN canvas (its inner scale(1,-1) flips the
+// y-up glyph font space to SVG display space). kty's world is y-UP, so we seed
+// the walk with a final y-flip to convert back — otherwise glyphs render upside down.
+const FLIP_Y = [1, 0, 0, -1, 0, 0];
+
 /** Convert a LaTeX string into an array of { d, transform } glyph specs. */
 export function latexToGlyphs(latex, displayMode = true) {
   const { doc, adaptor } = mathjaxDoc();
   const node = doc.convert(latex, { display: displayMode });
   const glyphs = [];
-  collectGlyphs(adaptor, node, IDENTITY_AFFINE, glyphs);
+  collectGlyphs(adaptor, node, FLIP_Y, glyphs);
   return glyphs;
 }
 
