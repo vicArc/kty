@@ -29,6 +29,16 @@ export * from './mobject/vmobject.js';
 export * from './mobject/geometry.js';
 export * from './mobject/shape_matchers.js';
 
+// Animation system (Stage 5)
+export * from './animation/animation.js';
+export * from './animation/transform.js';
+export * from './animation/creation.js';
+export * from './animation/fading.js';
+export * from './animation/composition.js';
+export * from './animation/rotation.js';
+export * from './animation/update.js';
+export * from './scene/scene.js';
+
 export * from './camera/camera_frame.js';
 export * from './camera/camera.js';
 export * from './render/render_backend.js';

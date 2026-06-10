@@ -21,7 +21,9 @@ import {
 import { rotationMatrix, applyMatrix } from '../foundation/space_ops.js';
 import { colorToRgb, rgbToHex, colorGradient } from '../foundation/color.js';
 import { interpolate, integerInterpolate } from '../foundation/bezier.js';
+import { straightPath } from '../foundation/paths.js';
 import { listify, resizeWithInterpolation } from '../foundation/iterables.js';
+import { AnimationBuilder } from '../animation/animation_builder.js';
 
 const sub = (a, b) => a.map((x, i) => x - b[i]);
 const add = (a, b) => a.map((x, i) => x + b[i]);
@@ -688,6 +690,121 @@ export class Mobject {
     this.uniforms = { ...mobject.uniforms };
     this.refreshBoundingBox(true);
     return this.noteChangedData();
+  }
+
+  // --- animation support (Stage 5) ---
+
+  /** The `.animate` builder: `mob.animate.shift(...)` → an Animation for Scene.play. */
+  get animate() {
+    return new AnimationBuilder(this);
+  }
+
+  /**
+   * Set this mobject's data to the interpolation of two aligned mobjects.
+   * Point-like columns move via pathFunc; others are linearly blended.
+   */
+  interpolate(mob1, mob2, alpha, pathFunc = straightPath) {
+    for (const name of this.data.columns.keys()) {
+      const a = mob1.data.get(name);
+      const b = mob2.data.get(name);
+      const out = this.data.get(name);
+      if (this.pointlikeDataKeys.includes(name)) {
+        const n = this.data.length;
+        const p1 = [];
+        const p2 = [];
+        for (let i = 0; i < n; i++) {
+          p1.push([a[i * 3], a[i * 3 + 1], a[i * 3 + 2]]);
+          p2.push([b[i * 3], b[i * 3 + 1], b[i * 3 + 2]]);
+        }
+        const res = pathFunc(p1, p2, alpha);
+        for (let i = 0; i < n; i++) {
+          out[i * 3] = res[i][0];
+          out[i * 3 + 1] = res[i][1];
+          out[i * 3 + 2] = res[i][2];
+        }
+      } else {
+        for (let i = 0; i < out.length; i++) out[i] = (1 - alpha) * a[i] + alpha * b[i];
+      }
+    }
+    this.boundingBox = pathFunc(mob1.getBoundingBox(), mob2.getBoundingBox(), alpha);
+    this._needsNewBoundingBox = false;
+    return this.noteChangedData();
+  }
+
+  /** Base no-op; VMobject sets points to part [a,b] of another mobject. */
+  pointwiseBecomePartial() {
+    return this;
+  }
+
+  isAlignedWith(other) {
+    if (this.getNumPoints() !== other.getNumPoints()) return false;
+    if (this.submobjects.length !== other.submobjects.length) return false;
+    return this.submobjects.every((sm, i) => sm.isAlignedWith(other.submobjects[i]));
+  }
+
+  alignDataAndFamily(other) {
+    this.alignFamily(other);
+    this.alignData(other);
+    return this;
+  }
+
+  alignData(other) {
+    const f1 = this.getFamily();
+    const f2 = other.getFamily();
+    const n = Math.min(f1.length, f2.length);
+    for (let i = 0; i < n; i++) f1[i].alignPoints(f2[i]);
+    return this;
+  }
+
+  alignPoints(other) {
+    const maxLen = Math.max(this.getNumPoints(), other.getNumPoints());
+    this.data.resize(maxLen, 'order');
+    other.data.resize(maxLen, 'order');
+    this.refreshBoundingBox();
+    other.refreshBoundingBox();
+    return this;
+  }
+
+  alignFamily(other) {
+    const n1 = this.submobjects.length;
+    const n2 = other.submobjects.length;
+    if (n1 !== n2) {
+      this.addNMoreSubmobjects(Math.max(0, n2 - n1));
+      other.addNMoreSubmobjects(Math.max(0, n1 - n2));
+    }
+    for (let i = 0; i < this.submobjects.length; i++) {
+      this.submobjects[i].alignFamily(other.submobjects[i]);
+    }
+    return this;
+  }
+
+  invisibleCopy() {
+    return this.copy().setOpacity(0);
+  }
+
+  addNMoreSubmobjects(n) {
+    if (n === 0) return this;
+    const curr = this.submobjects.length;
+    if (curr === 0) {
+      const nullMob = this.copy();
+      nullMob.setSubmobjects([]);
+      nullMob.setPoints([this.getCenter()]);
+      this.setSubmobjects(Array.from({ length: n }, () => nullMob.copy()));
+      return this;
+    }
+    const target = curr + n;
+    const repeat = Array.from({ length: target }, (_, i) => Math.floor((i * curr) / target));
+    const splitFactors = Array.from(
+      { length: curr },
+      (_, i) => repeat.filter((r) => r === i).length
+    );
+    const newSubs = [];
+    this.submobjects.forEach((sm, i) => {
+      newSubs.push(sm);
+      for (let k = 1; k < splitFactors[i]; k++) newSubs.push(sm.invisibleCopy());
+    });
+    this.setSubmobjects(newSubs);
+    return this;
   }
 
   generateTarget() {

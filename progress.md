@@ -6,7 +6,7 @@ Tracks the ManimGL → web port. Task IDs mirror [`docs/04-migration-stages.md`]
 
 **How to use:** when you pick up a task, set it 🟡 and put your name + date in Notes. When it merges, set ✅. Keep the per-stage summary line current. Don't delete tasks — mark ⏭️ with a reason.
 
-_Last updated: 2026-06-10 — Stage 4: VMobject curve/partial API + the 2D geometry vocabulary (Arc/Circle/Dot/Line/Polygon/Rect/Square/Arrow/… + shape matchers). Shapes pixel-verified in a real browser (Circle/Square/Triangle exact colors). 154 unit tests green; branch `stage-4-geometry`, opened as a PR. Next: Stage 5 (animation system)._
+_Last updated: 2026-06-10 — Stage 5 animation system: async Scene.play/wait driver, Animation base, Transform (+align_data_and_family), ShowCreation/Fade/Rotate, AnimationGroup/Succession/LaggedStart, UpdateFrom\*, and the `.animate` builder. End-to-end browser check: a Transform animated a square -5→+5 with rAF rendering, pixel-verified. 171 unit tests green; branch `stage-5-animation`, opened as a PR. Next: Stage 6 (coordinates/numbers/functions/3D)._
 
 ---
 
@@ -19,13 +19,13 @@ _Last updated: 2026-06-10 — Stage 4: VMobject curve/partial API + the 2D geome
 | 2     | Mobject core & data model            | 🟡     | 6 / 7        |
 | 3     | Rendering engine (🔴 gate)           | 🟡     | 7 / 10       |
 | 4     | VMobject completion & 2D geometry    | 🟡     | 3 / 4        |
-| 5     | Animation system (🔴)                | ⬜     | 0 / 10       |
+| 5     | Animation system (🔴)                | 🟡     | 6 / 10       |
 | 6     | Coordinates, numbers, functions, 3D  | ⬜     | 0 / 7        |
 | 7     | Text & Tex (🔴)                      | ⬜     | 0 / 8        |
 | 8     | Interactivity & web-native authoring | ⬜     | 0 / 5        |
 | 9     | Export & web polish                  | ⬜     | 0 / 5        |
 | 10    | Parity sweep, docs, release          | ⬜     | 0 / 5        |
-|       | **Total**                            |        | **30 / 77**  |
+|       | **Total**                            |        | **36 / 77**  |
 
 ---
 
@@ -93,18 +93,18 @@ _Last updated: 2026-06-10 — Stage 4: VMobject curve/partial API + the 2D geome
 
 ## Stage 5 — Animation system 🔴
 
-| ID    | Task                                                 | Status | Notes     |
-| ----- | ---------------------------------------------------- | ------ | --------- |
-| S5.1  | async play/wait driver (rAF, Promise)                | ⬜     |           |
-| S5.2  | Animation base                                       | ⬜     |           |
-| S5.3  | Scene (add/remove, render groups, undo, wait)        | ⬜     |           |
-| S5.4  | Transform + align_data_and_family                    | ⬜     | hard core |
-| S5.5  | composition + update                                 | ⬜     |           |
-| S5.6  | creation (ShowCreation/Write/DrawBorderThenFill)     | ⬜     |           |
-| S5.7  | fading/growing/rotation/movement/numbers/specialized | ⬜     |           |
-| S5.8  | indication + transform_matching_parts                | ⬜     |           |
-| S5.9  | .animate builder (web-native)                        | ⬜     |           |
-| S5.10 | parity + visual tests                                | ⬜     |           |
+| ID    | Task                                                 | Status | Notes                                                                                                                               |
+| ----- | ---------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| S5.1  | async play/wait driver (rAF, Promise)                | ✅     | Scene.play/wait; frame-stepping driver; browser tick = rAF + render                                                                 |
+| S5.2  | Animation base                                       | ✅     | begin/interpolate/finish, lag/rate/time-span, families                                                                              |
+| S5.3  | Scene (add/remove, render groups, undo, wait)        | ✅     | add/remove/getRenderGroups/getState/restoreState                                                                                    |
+| S5.4  | Transform + align_data_and_family                    | ✅     | align family+points; interpolate over data columns; +Replacement/FromCopy/MoveToTarget/ApplyMethod/Restore/ScaleInPlace/FadeToColor |
+| S5.5  | composition + update                                 | ✅     | AnimationGroup/Succession/LaggedStart; UpdateFromFunc/AlphaFunc/MaintainPosition                                                    |
+| S5.6  | creation (ShowCreation/Write/DrawBorderThenFill)     | 🟡     | ShowCreation/Uncreate/Create/Write done; DrawBorderThenFill deferred                                                                |
+| S5.7  | fading/growing/rotation/movement/numbers/specialized | 🟡     | Fade(In/Out/FromPoint/ToPoint), Rotate/Rotating done; growing/movement/numbers/specialized deferred                                 |
+| S5.8  | indication + transform_matching_parts                | ⬜     | deferred to a follow-up                                                                                                             |
+| S5.9  | .animate builder (web-native)                        | ✅     | Proxy-based; chains methods; Scene.play accepts it                                                                                  |
+| S5.10 | parity + visual tests                                | 🟡     | 38 new unit tests + browser end-to-end (Transform animated -5→+5, pixel-verified). Formal PNG-diff still pending                    |
 
 ## Stage 6 — Coordinates, numbers, functions, 3D
 
