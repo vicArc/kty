@@ -6,7 +6,7 @@ Tracks the ManimGL → web port. Task IDs mirror [`docs/04-migration-stages.md`]
 
 **How to use:** when you pick up a task, set it 🟡 and put your name + date in Notes. When it merges, set ✅. Keep the per-stage summary line current. Don't delete tasks — mark ⏭️ with a reason.
 
-_Last updated: 2026-06-10 — Stage 5 animation system: async Scene.play/wait driver, Animation base, Transform (+align_data_and_family), ShowCreation/Fade/Rotate, AnimationGroup/Succession/LaggedStart, UpdateFrom\*, and the `.animate` builder. End-to-end browser check: a Transform animated a square -5→+5 with rAF rendering, pixel-verified. 171 unit tests green; branch `stage-5-animation`, opened as a PR. Next: Stage 6 (coordinates/numbers/functions/3D)._
+_Last updated: 2026-06-10 — Stage 6 (partial): the text-free 2D content layer — NumberLine/Axes/NumberPlane (c2p/p2c, getGraph) and functions (ParametricCurve/FunctionGraph/ImplicitFunction via marching squares). Axes+graph+grid pixel-verified in browser. 180 unit tests green; branch `stage-6-coordinates`, opened as a PR. Deferred within Stage 6: numbers/Matrix (need text → Stage 7) and 3D surfaces/point-clouds/vector-fields (need Mesh/Points/perspective renderer paths)._
 
 ---
 
@@ -20,12 +20,12 @@ _Last updated: 2026-06-10 — Stage 5 animation system: async Scene.play/wait dr
 | 3     | Rendering engine (🔴 gate)           | 🟡     | 7 / 10       |
 | 4     | VMobject completion & 2D geometry    | 🟡     | 3 / 4        |
 | 5     | Animation system (🔴)                | 🟡     | 6 / 10       |
-| 6     | Coordinates, numbers, functions, 3D  | ⬜     | 0 / 7        |
+| 6     | Coordinates, numbers, functions, 3D  | 🟡     | 2 / 7        |
 | 7     | Text & Tex (🔴)                      | ⬜     | 0 / 8        |
 | 8     | Interactivity & web-native authoring | ⬜     | 0 / 5        |
 | 9     | Export & web polish                  | ⬜     | 0 / 5        |
 | 10    | Parity sweep, docs, release          | ⬜     | 0 / 5        |
-|       | **Total**                            |        | **36 / 77**  |
+|       | **Total**                            |        | **38 / 77**  |
 
 ---
 
@@ -108,15 +108,15 @@ _Last updated: 2026-06-10 — Stage 5 animation system: async Scene.play/wait dr
 
 ## Stage 6 — Coordinates, numbers, functions, 3D
 
-| ID   | Task                                            | Status | Notes |
-| ---- | ----------------------------------------------- | ------ | ----- |
-| S6.1 | coordinate_systems (Axes, NumberPlane, c2p/p2c) | ⬜     |       |
-| S6.2 | number_line, numbers, matrix                    | ⬜     |       |
-| S6.3 | functions (Parametric, Graph, Implicit)         | ⬜     |       |
-| S6.4 | surface + three_dimensions (ParametricGeometry) | ⬜     |       |
-| S6.5 | point_cloud, dot_cloud (glow), image_mobject    | ⬜     |       |
-| S6.6 | vector_field, probability, frame, changing      | ⬜     |       |
-| S6.7 | tests + visual regression                       | ⬜     |       |
+| ID   | Task                                            | Status | Notes                                                                          |
+| ---- | ----------------------------------------------- | ------ | ------------------------------------------------------------------------------ |
+| S6.1 | coordinate_systems (Axes, NumberPlane, c2p/p2c) | ✅     | NumberLine/Axes/NumberPlane, c2p/p2c, getGraph; tick labels (text) → Stage 7   |
+| S6.2 | number_line, numbers, matrix                    | 🟡     | NumberLine geometry done; DecimalNumber/Integer/Matrix need text → Stage 7     |
+| S6.3 | functions (Parametric, Graph, Implicit)         | ✅     | ParametricCurve, FunctionGraph, ImplicitFunction (marching squares)            |
+| S6.4 | surface + three_dimensions (ParametricGeometry) | ⬜     | needs renderer Mesh path + PerspectiveCamera — deferred                        |
+| S6.5 | point_cloud, dot_cloud (glow), image_mobject    | ⬜     | needs THREE.Points/texture renderer paths — deferred                           |
+| S6.6 | vector_field, probability, frame, changing      | ⬜     | deferred                                                                       |
+| S6.7 | tests + visual regression                       | 🟡     | 9 unit tests; Axes+graph+grid pixel-verified in browser (glError 0, c2p exact) |
 
 ## Stage 7 — Text & Tex 🔴
 

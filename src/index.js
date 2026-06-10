@@ -29,6 +29,10 @@ export * from './mobject/vmobject.js';
 export * from './mobject/geometry.js';
 export * from './mobject/shape_matchers.js';
 
+// Coordinates & functions (Stage 6)
+export * from './mobject/functions.js';
+export * from './mobject/coordinate_systems.js';
+
 // Animation system (Stage 5)
 export * from './animation/animation.js';
 export * from './animation/transform.js';
