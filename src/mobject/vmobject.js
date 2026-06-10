@@ -210,6 +210,12 @@ export class VMobject extends Mobject {
     return this;
   }
 
+  /** Append corner points (line segments) onto the current subpath. */
+  addPointsAsCorners(points) {
+    for (const p of points) this.addLineTo(p);
+    return this;
+  }
+
   /** Set a single subpath directly from anchor/handle/anchor points (length 2k+1). */
   setPointsAsQuads(quadPoints) {
     this._resetPath();
