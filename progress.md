@@ -6,7 +6,7 @@ Tracks the ManimGL → web port. Task IDs mirror [`docs/04-migration-stages.md`]
 
 **How to use:** when you pick up a task, set it 🟡 and put your name + date in Notes. When it merges, set ✅. Keep the per-stage summary line current. Don't delete tasks — mark ⏭️ with a reason.
 
-_Last updated: 2026-06-10 — plan created; no code yet._
+_Last updated: 2026-06-10 — Stage 0 complete: scaffold pushed to main, CI green, branch protection active. Stage 1 next._
 
 ---
 
@@ -14,7 +14,7 @@ _Last updated: 2026-06-10 — plan created; no code yet._
 
 | Stage | Title                                | Status | Done / Total |
 | ----- | ------------------------------------ | ------ | ------------ |
-| 0     | Repo & tooling foundation            | ⬜     | 0 / 7        |
+| 0     | Repo & tooling foundation            | ✅     | 7 / 7        |
 | 1     | Foundation (math, color, config)     | ⬜     | 0 / 9        |
 | 2     | Mobject core & data model            | ⬜     | 0 / 7        |
 | 3     | Rendering engine (🔴 gate)           | ⬜     | 0 / 10       |
@@ -25,7 +25,7 @@ _Last updated: 2026-06-10 — plan created; no code yet._
 | 8     | Interactivity & web-native authoring | ⬜     | 0 / 5        |
 | 9     | Export & web polish                  | ⬜     | 0 / 5        |
 | 10    | Parity sweep, docs, release          | ⬜     | 0 / 5        |
-|       | **Total**                            |        | **0 / 77**   |
+|       | **Total**                            |        | **7 / 77**   |
 
 ---
 
@@ -33,13 +33,13 @@ _Last updated: 2026-06-10 — plan created; no code yet._
 
 | ID   | Task                                                                                       | Status | Notes         |
 | ---- | ------------------------------------------------------------------------------------------ | ------ | ------------- |
-| S0.1 | npm init (ESM) + core deps (three, vite, vitest, playwright, pixelmatch, eslint, prettier) | ⬜     |               |
-| S0.2 | Vite config + folder scaffold                                                              | ⬜     |               |
-| S0.3 | ESLint flat config + Prettier (+ optional jsconfig checkJs)                                | ⬜     |               |
-| S0.4 | Vitest + JUnit reporter; smoke test green                                                  | ⬜     |               |
-| S0.5 | GitHub Actions CI (lint+unit+build)                                                        | ⬜     |               |
-| S0.6 | Repo write-protection: MIT LICENSE + protect main (stays public)                           | ⬜     | docs/07 A1–A2 |
-| S0.7 | First commit + push; verify CI + protection                                                | ⬜     |               |
+| S0.1 | npm init (ESM) + core deps (three, vite, vitest, eslint, prettier)                         | ✅     | playwright/pixelmatch deferred to Stage 3 |
+| S0.2 | Vite config + folder scaffold                                                              | ✅     |               |
+| S0.3 | ESLint flat config + Prettier (+ optional jsconfig checkJs)                                | ✅     |               |
+| S0.4 | Vitest + JUnit reporter; smoke test green                                                  | ✅     | 3 tests pass  |
+| S0.5 | GitHub Actions CI (lint+format+unit+build)                                                 | ✅     | run #1 success in 21s |
+| S0.6 | Repo write-protection: MIT LICENSE + protect main (stays public)                           | ✅     | ruleset protect-main active |
+| S0.7 | First commit + push; verify CI + protection                                                | ✅     | pushed to main |
 
 ## Stage 1 — Foundation
 
