@@ -27,6 +27,7 @@
     "build": "vite build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:visual": "playwright test",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@playwright/test": "1.49.1",
     "eslint": "^9.13.0",
     "globals": "^15.11.0",
     "prettier": "^3.3.3",

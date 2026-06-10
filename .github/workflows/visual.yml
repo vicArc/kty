@@ -1,0 +1,50 @@
+name: visual
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests/visual/**'
+      - 'playwright.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/visual.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      update:
+        description: 'Regenerate golden screenshots and upload them as an artifact'
+        type: boolean
+        default: false
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    # Pinned Playwright image — browsers are pre-installed and match the npm
+    # @playwright/test version, so goldens are byte-reproducible here and in PRs.
+    container:
+      image: mcr.microsoft.com/playwright:v1.49.1-jammy
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - name: Run visual tests
+        run: npx playwright test ${{ (github.event_name == 'workflow_dispatch' && inputs.update) && '--update-snapshots' || '' }}
+        env:
+          HOME: /root # ensure Playwright finds the image's pre-installed browsers
+      - name: Upload regenerated goldens
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-screenshots
+          path: tests/visual/visual.spec.js-snapshots/
+      - name: Upload diff report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
