@@ -5,3 +5,7 @@ coverage/
 *.log
 .DS_Store
 .vite/
+.playwright-mcp/
+*-spike.png
+test-results/
+playwright-report/

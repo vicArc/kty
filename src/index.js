@@ -21,3 +21,12 @@ export * from './foundation/config.js';
 export * from './data/mobject_data.js';
 export * from './mobject/mobject.js';
 export * from './mobject/value_tracker.js';
+
+// Rendering engine (Stage 3)
+export * from './mobject/vmobject.js';
+export * from './camera/camera_frame.js';
+export * from './camera/camera.js';
+export * from './render/render_backend.js';
+export * from './render/three/vmobject_geometry.js';
+export * from './render/three/three_renderer.js';
+export * from './render/three/shader_insert.js';
