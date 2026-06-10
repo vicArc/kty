@@ -21,13 +21,57 @@ const square = () =>
 const circle = () => new VMobject().setPointsAsQuads(quadraticBezierPointsForArc(TAU));
 
 describe('vmobject geometry builders', () => {
-  it('vmobjectToShapes makes one THREE.Shape per subpath', () => {
+  it('vmobjectToShapes makes one THREE.Shape per solid subpath', () => {
     const shapes = vmobjectToShapes(square());
     expect(shapes).toHaveLength(1);
     expect(shapes[0].type).toBe('Shape');
     // The shape outlines the unit square.
     const pts = shapes[0].getPoints(4);
     expect(pts.length).toBeGreaterThan(0);
+  });
+
+  it('nests an enclosed subpath as a hole (glyph counter, e.g. "o")', () => {
+    // Outer 4x4 square with an inner 2x2 square (a ring): one solid shape, one hole.
+    const ring = new VMobject()
+      .setPointsAsCorners([
+        [-2, -2, 0],
+        [2, -2, 0],
+        [2, 2, 0],
+        [-2, 2, 0],
+        [-2, -2, 0],
+      ])
+      .startNewPath([-1, -1, 0])
+      .addPointsAsCorners([
+        [-1, 1, 0],
+        [1, 1, 0],
+        [1, -1, 0],
+        [-1, -1, 0],
+      ]);
+    const shapes = vmobjectToShapes(ring);
+    expect(shapes).toHaveLength(1);
+    expect(shapes[0].holes).toHaveLength(1);
+  });
+
+  it('keeps two disjoint subpaths as two solid shapes (e.g. "=")', () => {
+    const bars = new VMobject()
+      .setPointsAsCorners([
+        [-2, 1, 0],
+        [2, 1, 0],
+        [2, 1.5, 0],
+        [-2, 1.5, 0],
+        [-2, 1, 0],
+      ])
+      .startNewPath([-2, -1, 0])
+      .addPointsAsCorners([
+        [2, -1, 0],
+        [2, -0.5, 0],
+        [-2, -0.5, 0],
+        [-2, -1, 0],
+      ]);
+    const shapes = vmobjectToShapes(bars);
+    expect(shapes).toHaveLength(2);
+    expect(shapes[0].holes).toHaveLength(0);
+    expect(shapes[1].holes).toHaveLength(0);
   });
 
   it('vmobjectToPolylines samples each quadratic', () => {
