@@ -17,20 +17,73 @@ export const STROKE_WIDTH_TO_WORLD = 8 / 1080;
 // matching how manim treats colors. Passing raw 0..1 values would double-brighten.
 const hexToThree = (hex) => new THREE.Color(hex);
 
-/** One THREE.Shape per subpath (anchor/handle/anchor quadratics). */
-export function vmobjectToShapes(vm) {
-  const shapes = [];
-  for (const sub of vm.getSubpaths()) {
-    const shape = new THREE.Shape();
-    shape.moveTo(sub[0][0], sub[0][1]);
-    for (let i = 0; i + 2 < sub.length; i += 2) {
-      const h = sub[i + 1];
-      const a = sub[i + 2];
-      shape.quadraticCurveTo(h[0], h[1], a[0], a[1]);
-    }
-    shapes.push(shape);
+/** Build a THREE.Shape or THREE.Path from a subpath's anchor/handle quadratics. */
+function subpathToCurvePath(sub, PathClass) {
+  const path = new PathClass();
+  path.moveTo(sub[0][0], sub[0][1]);
+  for (let i = 0; i + 2 < sub.length; i += 2) {
+    const h = sub[i + 1];
+    const a = sub[i + 2];
+    path.quadraticCurveTo(h[0], h[1], a[0], a[1]);
   }
-  return shapes;
+  return path;
+}
+
+/** Anchor points (every other point) of a subpath as a flat [x,y] polygon. */
+function anchorPolygon(sub) {
+  const poly = [];
+  for (let i = 0; i < sub.length; i += 2) poly.push([sub[i][0], sub[i][1]]);
+  return poly;
+}
+
+/** Even-odd ray-cast point-in-polygon test. */
+function pointInPolygon(x, y, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * THREE.Shapes for a VMobject's fill, with inner contours registered as holes.
+ *
+ * A glyph like `o`/`0`/`e` arrives as several subpaths (an outer contour plus
+ * one or more counters). Filling each subpath independently floods the counters
+ * solid, so we nest them: a subpath enclosed by an odd number of others is a
+ * hole of its immediate (smallest enclosing) container; even-depth subpaths are
+ * solid shapes. Containment is by anchor-polygon point-in-polygon, which is
+ * winding-independent (matching SVG/font nonzero fills after our y-flip).
+ */
+export function vmobjectToShapes(vm) {
+  const subs = vm.getSubpaths();
+  if (subs.length === 0) return [];
+  if (subs.length === 1) return [subpathToCurvePath(subs[0], THREE.Shape)];
+
+  const polys = subs.map(anchorPolygon);
+  const reps = subs.map((s) => [s[0][0], s[0][1]]);
+  const contains = (i, j) => i !== j && pointInPolygon(reps[i][0], reps[i][1], polys[j]);
+  const depth = subs.map((_, i) => subs.reduce((d, _s, j) => d + (contains(i, j) ? 1 : 0), 0));
+
+  const shapes = subs.map((s, i) =>
+    depth[i] % 2 === 0 ? subpathToCurvePath(s, THREE.Shape) : null
+  );
+  subs.forEach((s, i) => {
+    if (depth[i] % 2 === 0) return; // solid, not a hole
+    // immediate parent = the deepest contour that still encloses this one.
+    let parent = -1;
+    let parentDepth = -1;
+    for (let j = 0; j < subs.length; j++) {
+      if (contains(i, j) && depth[j] > parentDepth) {
+        parent = j;
+        parentDepth = depth[j];
+      }
+    }
+    if (parent >= 0 && shapes[parent]) shapes[parent].holes.push(subpathToCurvePath(s, THREE.Path));
+  });
+  return shapes.filter(Boolean);
 }
 
 /** Flat [x,y,z,...] polyline per subpath, sampling each quadratic. */
