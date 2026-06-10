@@ -1,9 +1,12 @@
 {
-  "name": "kty",
-  "version": "0.0.0",
+  "name": "@viesar/kty",
+  "version": "0.1.0",
   "description": "ManimGL ported to the web — a real-time, interactive math-animation engine on Three.js + WebGL2.",
   "type": "module",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "author": "vicArc",
   "repository": {
     "type": "git",
