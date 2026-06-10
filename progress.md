@@ -6,7 +6,7 @@ Tracks the ManimGL → web port. Task IDs mirror [`docs/04-migration-stages.md`]
 
 **How to use:** when you pick up a task, set it 🟡 and put your name + date in Notes. When it merges, set ✅. Keep the per-stage summary line current. Don't delete tasks — mark ⏭️ with a reason.
 
-_Last updated: 2026-06-10 — Stage 6 (partial): the text-free 2D content layer — NumberLine/Axes/NumberPlane (c2p/p2c, getGraph) and functions (ParametricCurve/FunctionGraph/ImplicitFunction via marching squares). Axes+graph+grid pixel-verified in browser. 180 unit tests green; branch `stage-6-coordinates`, opened as a PR. Deferred within Stage 6: numbers/Matrix (need text → Stage 7) and 3D surfaces/point-clouds/vector-fields (need Mesh/Points/perspective renderer paths)._
+_Last updated: 2026-06-10 — Stage 7 (Tex foundation): an SVG path parser + SVGMobject, and **Tex via MathJax** (headless liteAdaptor in Node + browser, fontCache none → glyph VMobjects). Browser e2e: `e^{iπ}+1=0` rendered as 7 glyph fills. MathJax kept out of the core bundle (externalized → still 91 KB). 191 unit tests green; branch `stage-7-tex`, opened as a PR. Deferred within Stage 7: Text (opentype), string color-maps, boolean ops, braces, TransformMatching._
 
 ---
 
@@ -21,11 +21,11 @@ _Last updated: 2026-06-10 — Stage 6 (partial): the text-free 2D content layer 
 | 4     | VMobject completion & 2D geometry    | 🟡     | 3 / 4        |
 | 5     | Animation system (🔴)                | 🟡     | 6 / 10       |
 | 6     | Coordinates, numbers, functions, 3D  | 🟡     | 2 / 7        |
-| 7     | Text & Tex (🔴)                      | ⬜     | 0 / 8        |
+| 7     | Text & Tex (🔴)                      | 🟡     | 3 / 8        |
 | 8     | Interactivity & web-native authoring | ⬜     | 0 / 5        |
 | 9     | Export & web polish                  | ⬜     | 0 / 5        |
 | 10    | Parity sweep, docs, release          | ⬜     | 0 / 5        |
-|       | **Total**                            |        | **38 / 77**  |
+|       | **Total**                            |        | **41 / 77**  |
 
 ---
 
@@ -120,16 +120,16 @@ _Last updated: 2026-06-10 — Stage 6 (partial): the text-free 2D content layer 
 
 ## Stage 7 — Text & Tex 🔴
 
-| ID   | Task                                        | Status | Notes |
-| ---- | ------------------------------------------- | ------ | ----- |
-| S7.1 | SVGMobject via SVGLoader                    | ⬜     |       |
-| S7.2 | Tex/TexText (MathJax/KaTeX → SVGLoader)     | ⬜     |       |
-| S7.3 | string_mobject isolation + tex_to_color_map | ⬜     |       |
-| S7.4 | text_mobject (opentype.js / troika)         | ⬜     |       |
-| S7.5 | brace, drawings                             | ⬜     |       |
-| S7.6 | boolean_ops (paper.js)                      | ⬜     |       |
-| S7.7 | TransformMatchingTex/Strings                | ⬜     |       |
-| S7.8 | visual regression (perceptual threshold)    | ⬜     |       |
+| ID   | Task                                        | Status | Notes                                                                            |
+| ---- | ------------------------------------------- | ------ | -------------------------------------------------------------------------------- |
+| S7.1 | SVGMobject via SVGLoader                    | ✅     | parser-based SVG path → VMobject (Node-testable); SVGMobject/VMobjectFromSVGPath |
+| S7.2 | Tex/TexText (MathJax/KaTeX → SVGLoader)     | ✅     | MathJax liteAdaptor (fontCache none) headless in Node + browser; glyph VMobjects |
+| S7.3 | string_mobject isolation + tex_to_color_map | ⬜     | deferred (substring selection + color labels)                                    |
+| S7.4 | text_mobject (opentype.js / troika)         | ⬜     | opentype.js installed; glyph→VMobject deferred                                   |
+| S7.5 | brace, drawings                             | ⬜     | deferred (needs Tex/boolean ops)                                                 |
+| S7.6 | boolean_ops (paper.js)                      | ⬜     | deferred                                                                         |
+| S7.7 | TransformMatchingTex/Strings                | ⬜     | deferred (needs S7.3)                                                            |
+| S7.8 | visual regression (perceptual threshold)    | 🟡     | 11 unit tests + browser e2e (e^{iπ}+1=0 → 7 glyphs, glError 0); PNG-diff pending |
 
 ## Stage 8 — Interactivity & web-native authoring
 

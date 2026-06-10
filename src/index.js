@@ -33,6 +33,11 @@ export * from './mobject/shape_matchers.js';
 export * from './mobject/functions.js';
 export * from './mobject/coordinate_systems.js';
 
+// Text & Tex (Stage 7)
+export * from './mobject/svg/svg_path.js';
+export * from './mobject/svg/svg_mobject.js';
+export * from './mobject/svg/tex_mobject.js';
+
 // Animation system (Stage 5)
 export * from './animation/animation.js';
 export * from './animation/transform.js';
