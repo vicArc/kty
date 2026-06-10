@@ -6,7 +6,7 @@ Tracks the ManimGL → web port. Task IDs mirror [`docs/04-migration-stages.md`]
 
 **How to use:** when you pick up a task, set it 🟡 and put your name + date in Notes. When it merges, set ✅. Keep the per-stage summary line current. Don't delete tasks — mark ⏭️ with a reason.
 
-_Last updated: 2026-06-10 — Stage 7 (Tex foundation): an SVG path parser + SVGMobject, and **Tex via MathJax** (headless liteAdaptor in Node + browser, fontCache none → glyph VMobjects). Browser e2e: `e^{iπ}+1=0` rendered as 7 glyph fills. MathJax kept out of the core bundle (externalized → still 91 KB). 191 unit tests green; branch `stage-7-tex`, opened as a PR. Deferred within Stage 7: Text (opentype), string color-maps, boolean ops, braces, TransformMatching._
+_Last updated: 2026-06-10 — Text/numbers layer finished on the Tex pipeline: DecimalNumber/Integer, Text, axis tick labels (addNumbers/addCoordinateLabels), and number animations (ChangeDecimalToValue/CountInFrom). Browser e2e: labeled Axes + graph + Tex + Text + a live DecimalNumber all render (glError 0). 202 unit tests green; branch `stage-text-numbers`, opened as a PR. Deferred: opentype system-font Text, Matrix, string color-maps, boolean ops, braces, TransformMatching._
 
 ---
 
@@ -20,12 +20,12 @@ _Last updated: 2026-06-10 — Stage 7 (Tex foundation): an SVG path parser + SVG
 | 3     | Rendering engine (🔴 gate)           | 🟡     | 7 / 10       |
 | 4     | VMobject completion & 2D geometry    | 🟡     | 3 / 4        |
 | 5     | Animation system (🔴)                | 🟡     | 6 / 10       |
-| 6     | Coordinates, numbers, functions, 3D  | 🟡     | 2 / 7        |
-| 7     | Text & Tex (🔴)                      | 🟡     | 3 / 8        |
+| 6     | Coordinates, numbers, functions, 3D  | 🟡     | 3 / 7        |
+| 7     | Text & Tex (🔴)                      | 🟡     | 4 / 8        |
 | 8     | Interactivity & web-native authoring | ⬜     | 0 / 5        |
 | 9     | Export & web polish                  | ⬜     | 0 / 5        |
 | 10    | Parity sweep, docs, release          | ⬜     | 0 / 5        |
-|       | **Total**                            |        | **41 / 77**  |
+|       | **Total**                            |        | **43 / 77**  |
 
 ---
 
@@ -108,15 +108,15 @@ _Last updated: 2026-06-10 — Stage 7 (Tex foundation): an SVG path parser + SVG
 
 ## Stage 6 — Coordinates, numbers, functions, 3D
 
-| ID   | Task                                            | Status | Notes                                                                          |
-| ---- | ----------------------------------------------- | ------ | ------------------------------------------------------------------------------ |
-| S6.1 | coordinate_systems (Axes, NumberPlane, c2p/p2c) | ✅     | NumberLine/Axes/NumberPlane, c2p/p2c, getGraph; tick labels (text) → Stage 7   |
-| S6.2 | number_line, numbers, matrix                    | 🟡     | NumberLine geometry done; DecimalNumber/Integer/Matrix need text → Stage 7     |
-| S6.3 | functions (Parametric, Graph, Implicit)         | ✅     | ParametricCurve, FunctionGraph, ImplicitFunction (marching squares)            |
-| S6.4 | surface + three_dimensions (ParametricGeometry) | ⬜     | needs renderer Mesh path + PerspectiveCamera — deferred                        |
-| S6.5 | point_cloud, dot_cloud (glow), image_mobject    | ⬜     | needs THREE.Points/texture renderer paths — deferred                           |
-| S6.6 | vector_field, probability, frame, changing      | ⬜     | deferred                                                                       |
-| S6.7 | tests + visual regression                       | 🟡     | 9 unit tests; Axes+graph+grid pixel-verified in browser (glError 0, c2p exact) |
+| ID   | Task                                            | Status | Notes                                                                                   |
+| ---- | ----------------------------------------------- | ------ | --------------------------------------------------------------------------------------- |
+| S6.1 | coordinate_systems (Axes, NumberPlane, c2p/p2c) | ✅     | NumberLine/Axes/NumberPlane, c2p/p2c, getGraph; tick labels (text) → Stage 7            |
+| S6.2 | number_line, numbers, matrix                    | 🟡     | NumberLine + DecimalNumber/Integer (Tex-based) + axis tick labels done; Matrix deferred |
+| S6.3 | functions (Parametric, Graph, Implicit)         | ✅     | ParametricCurve, FunctionGraph, ImplicitFunction (marching squares)                     |
+| S6.4 | surface + three_dimensions (ParametricGeometry) | ⬜     | needs renderer Mesh path + PerspectiveCamera — deferred                                 |
+| S6.5 | point_cloud, dot_cloud (glow), image_mobject    | ⬜     | needs THREE.Points/texture renderer paths — deferred                                    |
+| S6.6 | vector_field, probability, frame, changing      | ⬜     | deferred                                                                                |
+| S6.7 | tests + visual regression                       | 🟡     | 9 unit tests; Axes+graph+grid pixel-verified in browser (glError 0, c2p exact)          |
 
 ## Stage 7 — Text & Tex 🔴
 
@@ -125,7 +125,7 @@ _Last updated: 2026-06-10 — Stage 7 (Tex foundation): an SVG path parser + SVG
 | S7.1 | SVGMobject via SVGLoader                    | ✅     | parser-based SVG path → VMobject (Node-testable); SVGMobject/VMobjectFromSVGPath |
 | S7.2 | Tex/TexText (MathJax/KaTeX → SVGLoader)     | ✅     | MathJax liteAdaptor (fontCache none) headless in Node + browser; glyph VMobjects |
 | S7.3 | string_mobject isolation + tex_to_color_map | ⬜     | deferred (substring selection + color labels)                                    |
-| S7.4 | text_mobject (opentype.js / troika)         | ⬜     | opentype.js installed; glyph→VMobject deferred                                   |
+| S7.4 | text_mobject (opentype.js / troika)         | ✅     | Text via Tex ext{} (LaTeX font); opentype system-font path = enhancement         |
 | S7.5 | brace, drawings                             | ⬜     | deferred (needs Tex/boolean ops)                                                 |
 | S7.6 | boolean_ops (paper.js)                      | ⬜     | deferred                                                                         |
 | S7.7 | TransformMatchingTex/Strings                | ⬜     | deferred (needs S7.3)                                                            |

@@ -37,6 +37,9 @@ export * from './mobject/coordinate_systems.js';
 export * from './mobject/svg/svg_path.js';
 export * from './mobject/svg/svg_mobject.js';
 export * from './mobject/svg/tex_mobject.js';
+export * from './mobject/svg/text_mobject.js';
+export * from './mobject/numbers.js';
+export * from './animation/numbers.js';
 
 // Animation system (Stage 5)
 export * from './animation/animation.js';
