@@ -706,9 +706,8 @@ export class Mobject {
   }
 
   // --- iteration ergonomics ---
-  get length() {
-    return this.submobjects.length;
-  }
+  // (No `length` getter: it would collide with subclasses that store a `length`
+  // field, and with the general expectation that `.length` is writable.)
   at(i) {
     return this.submobjects[i];
   }
