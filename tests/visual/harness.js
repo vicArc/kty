@@ -21,6 +21,9 @@ const {
   Tex,
   Text,
   DecimalNumber,
+  Sphere,
+  Torus,
+  Cube,
   TAU,
 } = kty;
 
@@ -84,6 +87,19 @@ export const SCENES = {
       .shift([1, 0, 0]);
     return [label, value];
   },
+  // 3D scenes: a reorient turns the camera perspective (Mesh path + lights).
+  sphere: () => ({
+    mobjects: [new Sphere({ radius: 2, color: '#58C4DD' })],
+    reorient: [-30, 70],
+  }),
+  torus: () => ({
+    mobjects: [new Torus({ r1: 2, r2: 0.8, color: '#FC6255' })],
+    reorient: [-30, 70],
+  }),
+  cube: () => ({
+    mobjects: [new Cube({ sideLength: 2.4, color: '#83C167' })],
+    reorient: [-40, 75],
+  }),
 };
 
 const id = new URLSearchParams(location.search).get('scene') || 'circle';
@@ -97,10 +113,17 @@ try {
   const renderer = new ThreeRenderer({ width: W, height: H }).attach(canvas);
   const build = SCENES[id];
   if (!build) throw new Error(`unknown scene: ${id}`);
-  const mobjects = build();
-  const group = new VGroup(...mobjects);
+  const def = build();
+  // Scenes are either a flat mobject array (2D) or { mobjects, reorient } (3D).
+  const isObj = !Array.isArray(def);
+  const mobjects = isObj ? def.mobjects : def;
+  if (isObj && def.reorient) {
+    renderer.camera.getFrame().reorient(def.reorient[0], def.reorient[1]);
+  }
+  // 2D stays VGroup-wrapped (unchanged); 3D mobjects render directly.
+  const renderList = isObj ? mobjects : [new VGroup(...mobjects)];
   function frame() {
-    renderer.render([group]);
+    renderer.render(renderList);
     requestAnimationFrame(frame);
   }
   frame();
