@@ -15,6 +15,9 @@ const SCENES = [
   'tex',
   'text',
   'decimal',
+  'sphere',
+  'torus',
+  'cube',
 ];
 
 for (const id of SCENES) {

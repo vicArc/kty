@@ -161,12 +161,18 @@ export class Mobject {
       // transformed once (manim folds points + bbox into one pass).
       const bb = worksOnBoundingBox ? mob.getBoundingBox().map((p) => [...p]) : null;
       if (mob.hasPoints()) {
-        const flat = mob.data.get('point');
-        for (let i = 0; i < mob.data.length; i++) {
-          const q = apply([flat[i * 3], flat[i * 3 + 1], flat[i * 3 + 2]]);
-          flat[i * 3] = q[0];
-          flat[i * 3 + 1] = q[1];
-          flat[i * 3 + 2] = q[2];
+        // Transform every pointlike column (manim's pointlike_data_keys), not
+        // just 'point' — e.g. a Surface's 'd_normal_point' must follow so its
+        // normals stay correct under scale/rotate/applyMatrix.
+        for (const name of mob.pointlikeDataKeys) {
+          if (!mob.data.columns.has(name)) continue;
+          const flat = mob.data.get(name);
+          for (let i = 0; i < mob.data.length; i++) {
+            const q = apply([flat[i * 3], flat[i * 3 + 1], flat[i * 3 + 2]]);
+            flat[i * 3] = q[0];
+            flat[i * 3 + 1] = q[1];
+            flat[i * 3 + 2] = q[2];
+          }
         }
       }
       if (worksOnBoundingBox) {
