@@ -71,18 +71,18 @@ _Prior (2026-06-10 am): Text/numbers layer finished on the Tex pipeline — Deci
 
 ## Stage 3 — Rendering engine 🔴 (GATE)
 
-| ID    | Task                                               | Status | Notes                                                                                                                  |
-| ----- | -------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
-| S3.1  | RenderBackend contract + ThreeRenderer skeleton    | ✅     | RenderBackend + ThreeRenderer (build/attach/render)                                                                    |
-| S3.2  | Camera + CameraFrame                               | ✅     | CameraFrame mobject drives OrthographicCamera                                                                          |
-| S3.3  | VMobject path → CurvePath/QuadraticBezierCurve3    | ✅     | VMobject path model + shape/polyline builders                                                                          |
-| S3.4  | stroke → Line2/LineMaterial                        | ✅     | fat world-unit lines per subpath                                                                                       |
-| S3.5  | fill → Shape/ShapeGeometry                         | ✅     | THREE.Shape/ShapeGeometry (earcut)                                                                                     |
-| S3.6  | render-group batching + renderOrder/z_index        | ✅     | assembleRenderGroups (stable z-order)                                                                                  |
-| S3.7  | #INSERT shader resolver                            | ✅     | resolveInserts + dedupeUniforms                                                                                        |
-| S3.8  | de-risking spike (circle/star/squiggle/Tex)        | ✅     | 12 scenes pixel-diffed in CI (circle/square/triangle/pentagon/star/squiggle/shapes/axes/plane/tex/text/decimal)        |
+| ID    | Task                                               | Status | Notes                                                                                                                      |
+| ----- | -------------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------- |
+| S3.1  | RenderBackend contract + ThreeRenderer skeleton    | ✅     | RenderBackend + ThreeRenderer (build/attach/render)                                                                        |
+| S3.2  | Camera + CameraFrame                               | ✅     | CameraFrame mobject drives OrthographicCamera                                                                              |
+| S3.3  | VMobject path → CurvePath/QuadraticBezierCurve3    | ✅     | VMobject path model + shape/polyline builders                                                                              |
+| S3.4  | stroke → Line2/LineMaterial                        | ✅     | fat world-unit lines per subpath                                                                                           |
+| S3.5  | fill → Shape/ShapeGeometry                         | ✅     | THREE.Shape/ShapeGeometry (earcut)                                                                                         |
+| S3.6  | render-group batching + renderOrder/z_index        | ✅     | assembleRenderGroups (stable z-order)                                                                                      |
+| S3.7  | #INSERT shader resolver                            | ✅     | resolveInserts + dedupeUniforms                                                                                            |
+| S3.8  | de-risking spike (circle/star/squiggle/Tex)        | ✅     | 12 scenes pixel-diffed in CI (circle/square/triangle/pentagon/star/squiggle/shapes/axes/plane/tex/text/decimal)            |
 | S3.9  | fidelity fallbacks (winding/width/AA) as needed    | 🟡     | sRGB color-mgmt fixed; **fill winding/holes fixed** (counter nesting); per-vertex-width/AA fallbacks deferred until needed |
-| S3.10 | **GATE:** spike passes visual-regression threshold | ✅     | Playwright + pixel-diff in CI; goldens byte-reproducible in pinned Playwright Linux container; gate caught 2 real bugs |
+| S3.10 | **GATE:** spike passes visual-regression threshold | ✅     | Playwright + pixel-diff in CI; goldens byte-reproducible in pinned Playwright Linux container; gate caught 2 real bugs     |
 
 ## Stage 4 — VMobject completion & 2D geometry
 
@@ -110,27 +110,27 @@ _Prior (2026-06-10 am): Text/numbers layer finished on the Tex pipeline — Deci
 
 ## Stage 6 — Coordinates, numbers, functions, 3D
 
-| ID   | Task                                            | Status | Notes                                                                                   |
-| ---- | ----------------------------------------------- | ------ | --------------------------------------------------------------------------------------- |
-| S6.1 | coordinate_systems (Axes, NumberPlane, c2p/p2c) | ✅     | NumberLine/Axes/NumberPlane, c2p/p2c, getGraph; tick labels (text) → Stage 7            |
-| S6.2 | number_line, numbers, matrix                    | 🟡     | NumberLine + DecimalNumber/Integer (Tex-based) + axis tick labels done; Matrix deferred |
-| S6.3 | functions (Parametric, Graph, Implicit)         | ✅     | ParametricCurve, FunctionGraph, ImplicitFunction (marching squares)                     |
-| S6.4 | surface + three_dimensions (ParametricGeometry) | ⬜     | needs renderer Mesh path + PerspectiveCamera — deferred                                 |
-| S6.5 | point_cloud, dot_cloud (glow), image_mobject    | ⬜     | needs THREE.Points/texture renderer paths — deferred                                    |
-| S6.6 | vector_field, probability, frame, changing      | ⬜     | deferred                                                                                |
+| ID   | Task                                            | Status | Notes                                                                                                     |
+| ---- | ----------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------- |
+| S6.1 | coordinate_systems (Axes, NumberPlane, c2p/p2c) | ✅     | NumberLine/Axes/NumberPlane, c2p/p2c, getGraph; tick labels (text) → Stage 7                              |
+| S6.2 | number_line, numbers, matrix                    | 🟡     | NumberLine + DecimalNumber/Integer (Tex-based) + axis tick labels done; Matrix deferred                   |
+| S6.3 | functions (Parametric, Graph, Implicit)         | ✅     | ParametricCurve, FunctionGraph, ImplicitFunction (marching squares)                                       |
+| S6.4 | surface + three_dimensions (ParametricGeometry) | ⬜     | needs renderer Mesh path + PerspectiveCamera — deferred                                                   |
+| S6.5 | point_cloud, dot_cloud (glow), image_mobject    | ⬜     | needs THREE.Points/texture renderer paths — deferred                                                      |
+| S6.6 | vector_field, probability, frame, changing      | ⬜     | deferred                                                                                                  |
 | S6.7 | tests + visual regression                       | 🟡     | 9 unit tests; `axes`/`plane` pixel-diffed in CI (c2p exact). 3D/cloud/image visual cases pending S6.4–6.6 |
 
 ## Stage 7 — Text & Tex 🔴
 
-| ID   | Task                                        | Status | Notes                                                                            |
-| ---- | ------------------------------------------- | ------ | -------------------------------------------------------------------------------- |
-| S7.1 | SVGMobject via SVGLoader                    | ✅     | parser-based SVG path → VMobject (Node-testable); SVGMobject/VMobjectFromSVGPath |
-| S7.2 | Tex/TexText (MathJax/KaTeX → SVGLoader)     | ✅     | MathJax liteAdaptor (fontCache none) headless in Node + browser; glyph VMobjects |
-| S7.3 | string_mobject isolation + tex_to_color_map | ⬜     | deferred (substring selection + color labels)                                    |
-| S7.4 | text_mobject (opentype.js / troika)         | ✅     | Text via Tex ext{} (LaTeX font); opentype system-font path = enhancement         |
-| S7.5 | brace, drawings                             | ⬜     | deferred (needs Tex/boolean ops)                                                 |
-| S7.6 | boolean_ops (paper.js)                      | ⬜     | deferred                                                                         |
-| S7.7 | TransformMatchingTex/Strings                | ⬜     | deferred (needs S7.3)                                                            |
+| ID   | Task                                        | Status | Notes                                                                                             |
+| ---- | ------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------- |
+| S7.1 | SVGMobject via SVGLoader                    | ✅     | parser-based SVG path → VMobject (Node-testable); SVGMobject/VMobjectFromSVGPath                  |
+| S7.2 | Tex/TexText (MathJax/KaTeX → SVGLoader)     | ✅     | MathJax liteAdaptor (fontCache none) headless in Node + browser; glyph VMobjects                  |
+| S7.3 | string_mobject isolation + tex_to_color_map | ⬜     | deferred (substring selection + color labels)                                                     |
+| S7.4 | text_mobject (opentype.js / troika)         | ✅     | Text via Tex ext{} (LaTeX font); opentype system-font path = enhancement                          |
+| S7.5 | brace, drawings                             | ⬜     | deferred (needs Tex/boolean ops)                                                                  |
+| S7.6 | boolean_ops (paper.js)                      | ⬜     | deferred                                                                                          |
+| S7.7 | TransformMatchingTex/Strings                | ⬜     | deferred (needs S7.3)                                                                             |
 | S7.8 | visual regression (perceptual threshold)    | ✅     | `tex`/`text`/`decimal` scenes pixel-diffed in CI; caught & fixed glyph y-flip + counter-hole bugs |
 
 ## Stage 8 — Interactivity & web-native authoring
@@ -155,10 +155,10 @@ _Prior (2026-06-10 am): Text/numbers layer finished on the Tex pipeline — Deci
 
 ## Stage 10 — Parity sweep, docs, release
 
-| ID    | Task                                             | Status | Notes |
-| ----- | ------------------------------------------------ | ------ | ----- |
-| S10.1 | long-tail mobjects / once_useful_constructs      | ⬜     |       |
-| S10.2 | parity suite over example_scenes.py + scoreboard | ⬜     |       |
-| S10.3 | API docs + manim→kty migration guide + examples  | ⬜     |       |
-| S10.4 | perf budget pass (60fps target)                  | ⬜     |       |
+| ID    | Task                                             | Status | Notes                                                                                                                            |
+| ----- | ------------------------------------------------ | ------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| S10.1 | long-tail mobjects / once_useful_constructs      | ⬜     |                                                                                                                                  |
+| S10.2 | parity suite over example_scenes.py + scoreboard | ⬜     |                                                                                                                                  |
+| S10.3 | API docs + manim→kty migration guide + examples  | ⬜     |                                                                                                                                  |
+| S10.4 | perf budget pass (60fps target)                  | ⬜     |                                                                                                                                  |
 | S10.5 | versioned release + npm + demo site              | 🟡     | `@viesar/kty@0.1.2` live on public npm; docs/demo site live (test.kty.victorarce.com). Remaining: 1.0 parity + versioning policy |
