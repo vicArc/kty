@@ -51,6 +51,7 @@ export class Mobject {
     this._isAnimating = false;
     this.target = null;
     this.savedState = null;
+    this._listeners = null; // lazily-created Map<type, fn[]> for pointer events
 
     this.initData(schema);
     this.initUniforms();
@@ -696,6 +697,51 @@ export class Mobject {
     this.uniforms = { ...mobject.uniforms };
     this.refreshBoundingBox(true);
     return this.noteChangedData();
+  }
+
+  // --- pointer events (Stage 8.1) ---
+  // Handlers are dispatched by an EventDispatcher that raycasts the rendered
+  // scene; events bubble leaf→parent and can stopPropagation().
+
+  addEventListener(type, handler) {
+    (this._listeners ??= new Map()).set(type, [...(this._listeners.get(type) || []), handler]);
+    return this;
+  }
+
+  removeEventListener(type, handler) {
+    const arr = this._listeners?.get(type);
+    if (arr)
+      this._listeners.set(
+        type,
+        arr.filter((h) => h !== handler)
+      );
+    return this;
+  }
+
+  getEventListeners(type) {
+    return this._listeners?.get(type) || [];
+  }
+
+  hasEventListeners(type = null) {
+    if (!this._listeners) return false;
+    return type === null ? this._listeners.size > 0 : (this._listeners.get(type)?.length || 0) > 0;
+  }
+
+  /** Fire `handler({ mobject, point, native, ... })` when this mobject is clicked. */
+  onClick(handler) {
+    return this.addEventListener('click', handler);
+  }
+
+  /** `onHover(onEnter, onLeave?)` — pointer enter/leave over this mobject. */
+  onHover(onEnter, onLeave = null) {
+    if (onEnter) this.addEventListener('hover:enter', onEnter);
+    if (onLeave) this.addEventListener('hover:leave', onLeave);
+    return this;
+  }
+
+  /** Fire `handler({ mobject, point, delta, native })` while dragging this mobject. */
+  onDrag(handler) {
+    return this.addEventListener('drag', handler);
   }
 
   // --- animation support (Stage 5) ---
