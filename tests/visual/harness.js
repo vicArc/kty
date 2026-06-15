@@ -24,6 +24,9 @@ const {
   Sphere,
   Torus,
   Cube,
+  DotCloud,
+  GlowDots,
+  ImageMobject,
   TAU,
 } = kty;
 
@@ -100,6 +103,46 @@ export const SCENES = {
     mobjects: [new Cube({ sideLength: 2.4, color: '#83C167' })],
     reorient: [-40, 75],
   }),
+  dots: () => {
+    const cols = 21;
+    const rows = 11;
+    const pts = [];
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        pts.push([(i - (cols - 1) / 2) * 0.45, (j - (rows - 1) / 2) * 0.45, 0]);
+      }
+    }
+    const dc = new DotCloud({ points: pts, radius: 0.12 });
+    dc.setColorByGradient('#58C4DD', '#FC6255');
+    return { mobjects: [dc] };
+  },
+  glow: () => {
+    const pts = [];
+    for (let i = 0; i < 12; i++) {
+      const a = (TAU * i) / 12;
+      pts.push([Math.cos(a) * 2.4, Math.sin(a) * 2.4, 0]);
+    }
+    pts.push([0, 0, 0]);
+    return { mobjects: [new GlowDots({ points: pts, radius: 0.5, color: '#FFFF00' })] };
+  },
+  image: () => {
+    const cv = document.createElement('canvas');
+    cv.width = 128;
+    cv.height = 128;
+    const ctx = cv.getContext('2d');
+    const grd = ctx.createLinearGradient(0, 0, 128, 128);
+    grd.addColorStop(0, '#58C4DD');
+    grd.addColorStop(1, '#83C167');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = '#FC6255';
+    ctx.beginPath();
+    ctx.arc(64, 64, 34, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#FFFF00';
+    ctx.fillRect(18, 18, 22, 22);
+    return { mobjects: [new ImageMobject(cv, { height: 4.5 })] };
+  },
 };
 
 const id = new URLSearchParams(location.search).get('scene') || 'circle';

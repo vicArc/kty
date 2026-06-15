@@ -6,6 +6,8 @@ import * as THREE from 'three';
 import { RenderBackend, assembleRenderGroups } from '../render_backend.js';
 import { buildVMobjectObject3D } from './vmobject_geometry.js';
 import { buildSurfaceObject3D } from './surface_geometry.js';
+import { buildPointsObject3D } from './points_geometry.js';
+import { buildImageObject3D } from './image_geometry.js';
 import { Camera } from '../../camera/camera.js';
 
 export class ThreeRenderer extends RenderBackend {
@@ -30,6 +32,10 @@ export class ThreeRenderer extends RenderBackend {
     switch (mob.renderType) {
       case 'surface':
         return buildSurfaceObject3D(mob);
+      case 'points':
+        return buildPointsObject3D(mob);
+      case 'image':
+        return buildImageObject3D(mob);
       default:
         return buildVMobjectObject3D(mob, this.resolution);
     }
