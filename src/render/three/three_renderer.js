@@ -70,6 +70,22 @@ export class ThreeRenderer extends RenderBackend {
     this.scene.add(fill);
   }
 
+  /**
+   * Resize the drawing buffer. With `matchAspect` (default), the camera frame's
+   * width is adjusted to the new pixel aspect so content isn't stretched —
+   * vertical world extent is preserved. Used by `observeResize`.
+   */
+  setSize(width, height, { matchAspect = true } = {}) {
+    this.width = width;
+    this.height = height;
+    if (this.renderer) this.renderer.setSize(width, height, false);
+    if (matchAspect && height > 0) {
+      const frame = this.camera.getFrame();
+      frame.setFrameShape(frame.getHeight() * (width / height), frame.getHeight());
+    }
+    return this;
+  }
+
   /** Attach to a real canvas, creating the WebGL renderer (browser only). */
   attach(canvas) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });

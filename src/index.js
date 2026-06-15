@@ -68,3 +68,6 @@ export * from './render/three/points_geometry.js';
 export * from './render/three/image_geometry.js';
 export * from './render/three/three_renderer.js';
 export * from './render/three/shader_insert.js';
+
+// Interaction — pointer events & picking (Stage 8.1)
+export * from './interaction/events.js';
