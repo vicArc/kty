@@ -71,3 +71,6 @@ export * from './render/three/shader_insert.js';
 
 // Interaction — pointer events & picking (Stage 8.1)
 export * from './interaction/events.js';
+
+// Web component — <kty-scene> embeddable element (Stage 9.4)
+export * from './web/kty_scene.js';
