@@ -16,20 +16,22 @@ _Prior (2026-06-10 am): Text/numbers layer finished on the Tex pipeline — Deci
 
 ## Summary
 
-| Stage | Title                                | Status | Done / Total |
-| ----- | ------------------------------------ | ------ | ------------ |
-| 0     | Repo & tooling foundation            | ✅     | 7 / 7        |
-| 1     | Foundation (math, color, config)     | 🟡     | 7 / 9        |
-| 2     | Mobject core & data model            | 🟡     | 6 / 7        |
-| 3     | Rendering engine (🔴 gate)           | 🟡     | 9 / 10       |
-| 4     | VMobject completion & 2D geometry    | 🟡     | 3 / 4        |
-| 5     | Animation system (🔴)                | 🟡     | 6 / 10       |
-| 6     | Coordinates, numbers, functions, 3D  | 🟡     | 4 / 7        |
-| 7     | Text & Tex (🔴)                      | 🟡     | 5 / 8        |
-| 8     | Interactivity & web-native authoring | ⬜     | 0 / 5        |
-| 9     | Export & web polish                  | ⬜     | 0 / 5        |
-| 10    | Parity sweep, docs, release          | 🟡     | 0 / 5        |
-|       | **Total**                            |        | **47 / 77**  |
+| Stage | Title                               | Status | Done / Total |
+| ----- | ----------------------------------- | ------ | ------------ |
+| 0     | Repo & tooling foundation           | ✅     | 7 / 7        |
+| 1     | Foundation (math, color, config)    | 🟡     | 7 / 9        |
+| 2     | Mobject core & data model           | 🟡     | 6 / 7        |
+| 3     | Rendering engine (🔴 gate)          | 🟡     | 9 / 10       |
+| 4     | VMobject completion & 2D geometry   | 🟡     | 3 / 4        |
+| 5     | Animation system (🔴)               | 🟡     | 6 / 10       |
+| 6     | Coordinates, numbers, functions, 3D | 🟡     | 4 / 7        |
+| 7     | Text & Tex (🔴)                     | 🟡     | 5 / 8        |
+| 8     | Interactivity (events/picking)      | ⬜     | 0 / 1        |
+| 9     | Embeddability & export (library)    | ⬜     | 0 / 3        |
+| 10    | Parity, docs, release               | 🟡     | 0 / 5        |
+|       | **Total**                           |        | **47 / 71**  |
+
+> **Scope (2026-06-10):** kty is re-scoped as a **lean library**. App-shaped pieces from ManimGL-the-_tool_ — the interactive authoring editor, live-coding HMR, and video/audio/GIF export — move to **kty-doc** (the playground/showcase app); the authoring DSL and CLI scene-registry are dropped. Stage 8/9 totals shrank accordingly (the moved/dropped items are marked ⏭️ in their tables). See [doc 04](./docs/04-migration-stages.md#library-scope-kty-vs-kty-doc).
 
 ---
 
@@ -135,32 +137,36 @@ _Prior (2026-06-10 am): Text/numbers layer finished on the Tex pipeline — Deci
 | S7.7 | TransformMatchingTex/Strings                | ⬜     | deferred (needs S7.3)                                                                             |
 | S7.8 | visual regression (perceptual threshold)    | ✅     | `tex`/`text`/`decimal` scenes pixel-diffed in CI; caught & fixed glyph y-flip + counter-hole bugs |
 
-## Stage 8 — Interactivity & web-native authoring
+## Stage 8 — Interactivity (library: events & picking)
 
-| ID   | Task                                         | Status | Notes |
-| ---- | -------------------------------------------- | ------ | ----- |
-| S8.1 | event dispatcher + Raycaster + window events | ⬜     |       |
-| S8.2 | InteractiveScene (selection, gizmos, keys)   | ⬜     |       |
-| S8.3 | web-native authoring DSL                     | ⬜     |       |
-| S8.4 | live editor + HMR hot reload                 | ⬜     |       |
-| S8.5 | scene registry / extract_scene equivalent    | ⬜     |       |
+_Re-scoped for the library: only the thin events/picking API is core kty. The authoring tool (InteractiveScene, live editor/HMR) moves to **kty-doc**; the DSL and scene-registry are dropped. See [doc 04](./docs/04-migration-stages.md)._
 
-## Stage 9 — Export & web polish
+| ID   | Task                                                  | Status | Notes                                                                |
+| ---- | ----------------------------------------------------- | ------ | -------------------------------------------------------------------- |
+| S8.1 | events/picking API (Raycaster, onClick/hover, resize) | ⬜     | the one core-library piece of Stage 8                                |
+| —    | ~~InteractiveScene (selection, gizmos, keys)~~        | ⏭️     | moved to **kty-doc** playground (app, not core library)              |
+| —    | ~~live editor + HMR hot reload~~                      | ⏭️     | moved to **kty-doc** playground                                      |
+| —    | ~~web-native authoring DSL~~                          | ⏭️     | dropped — the JS API is the authoring surface                        |
+| —    | ~~scene registry / extract_scene~~                    | ⏭️     | dropped — CLI concept; a library consumer imports and calls directly |
 
-| ID   | Task                                                         | Status | Notes |
-| ---- | ------------------------------------------------------------ | ------ | ----- |
-| S9.1 | deterministic export driver (fixed dt)                       | ⬜     |       |
-| S9.2 | video export (WebCodecs + mp4-muxer; MediaRecorder fallback) | ⬜     |       |
-| S9.3 | image/SVG/GIF export                                         | ⬜     |       |
-| S9.4 | web improvements (responsive, web component, perf)           | ⬜     |       |
-| S9.5 | audio (Web Audio API)                                        | ⬜     |       |
+## Stage 9 — Embeddability & export (library) + media demos (kty-doc)
 
-## Stage 10 — Parity sweep, docs, release
+_Re-scoped: frame/image/SVG export + embeddability are core kty; heavy video/audio/GIF assembly is demoed in **kty-doc**, not the core bundle._
+
+| ID   | Task                                                           | Status | Notes                                                             |
+| ---- | -------------------------------------------------------------- | ------ | ----------------------------------------------------------------- |
+| S9.1 | deterministic export driver (fixed dt)                         | ⬜     | library                                                           |
+| S9.3 | image/SVG export (`toPNG`/`toSVG`)                             | ⬜     | library (lightweight)                                             |
+| S9.4 | embeddability: responsive + `<kty-scene>` web component + perf | ⬜     | library                                                           |
+| —    | ~~video export (WebCodecs + mp4-muxer)~~                       | ⏭️     | **kty-doc** demo; optional `@viesar/kty-export` later if demanded |
+| —    | ~~audio (Web Audio API) · GIF export~~                         | ⏭️     | **kty-doc** demos (video/app concerns)                            |
+
+## Stage 10 — Parity, docs, release (the "real library" stage)
 
 | ID    | Task                                             | Status | Notes                                                                                                                            |
 | ----- | ------------------------------------------------ | ------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| S10.1 | long-tail mobjects / once_useful_constructs      | ⬜     |                                                                                                                                  |
-| S10.2 | parity suite over example_scenes.py + scoreboard | ⬜     |                                                                                                                                  |
-| S10.3 | API docs + manim→kty migration guide + examples  | ⬜     |                                                                                                                                  |
-| S10.4 | perf budget pass (60fps target)                  | ⬜     |                                                                                                                                  |
-| S10.5 | versioned release + npm + demo site              | 🟡     | `@viesar/kty@0.1.2` live on public npm; docs/demo site live (test.kty.victorarce.com). Remaining: 1.0 parity + versioning policy |
+| S10.1 | long-tail mobjects / once_useful_constructs      | ⬜     | a library is judged by what it can draw                                                                                          |
+| S10.2 | parity suite over example_scenes.py + scoreboard | ⬜     | dev tooling (not shipped)                                                                                                        |
+| S10.3 | API docs + manim→kty migration guide + examples  | ⬜     | **highest-priority adoption lever**                                                                                              |
+| S10.4 | perf budget pass (60fps target)                  | ⬜     | + bundle-size budget                                                                                                             |
+| S10.5 | versioned release + npm + demo site              | 🟡     | `@viesar/kty@0.1.3` live on public npm; docs/demo site live (test.kty.victorarce.com). Remaining: 1.0 parity + versioning policy |

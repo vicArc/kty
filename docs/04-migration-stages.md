@@ -4,6 +4,8 @@ Staged roadmap for the full 1:1 port. Stages are ordered so the **~12 hard files
 
 **Sequencing principle:** nothing depends on the VMobject renderer until it has passed the Stage 3 visual-parity spike. Build the risky core first; pile volume on later.
 
+**Library scope (kty vs kty-doc).** kty is a **lean rendering/animation library** — mobjects, animations, coordinate systems, a thin events/picking API, embeddability, and frame/image/SVG export. The **application-shaped** pieces inherited from ManimGL-the-_tool_ — the on-screen authoring editor, live-coding HMR, and video/audio assembly — live in **kty-doc** (the playground & showcase app that consumes the published package), **not** in the core bundle or as extra npm packages. The second authoring DSL and the CLI scene-registry are **dropped**: the JS API _is_ the authoring surface; a library consumer imports and calls directly. This keeps the library small and focused; the "tool" experience is an app built on top of it.
+
 ---
 
 ## Stage 0 — Repo & tooling foundation
@@ -108,44 +110,57 @@ _Goal: the highest-risk external-dependency replacements._
 - **S7.7** `TransformMatchingTex`/`Strings` end-to-end.
 - **S7.8** Visual regression on Tex/Text-heavy scenes (perceptual threshold; fonts will differ).
 
-## Stage 8 — Interactivity & web-native authoring
+## Stage 8 — Interactivity (library: events & picking)
 
-_Goal: the hybrid API's outer layer and the live-coding replacement._
+_Goal: a thin, embeddable interaction API. The live-coding **authoring tool** is **not** core-library scope — it lives in **kty-doc** (see "Library scope" above)._
 
-- **S8.1** Event dispatcher + `THREE.Raycaster` hit-testing; `window`/canvas events, resize, fullscreen.
-- **S8.2** `InteractiveScene` — selection, move/scale/rotate gizmos, key bindings.
-- **S8.3** Web-native authoring DSL (declarative groups, async sequencing) over the faithful engine.
-- **S8.4** **Live editor**: in-browser code editor (Monaco/CodeMirror) → sandboxed eval → scene registry; Vite HMR hot-reload (replaces IPython `embed`/`reload_scene`/`checkpoint_paste`).
-- **S8.5** Scene registry + `extract_scene` equivalent (bundled discovery).
+- **S8.1** Event dispatcher + `THREE.Raycaster` hit-testing; per-mobject `onClick`/`onHover`/drag handlers; `window`/canvas events, resize, fullscreen. **(library)**
 
-## Stage 9 — Export & web polish
+_Moved to **kty-doc** (playground app, consuming the published library):_
 
-_Goal: get frames out, and use the web's advantages ([doc 05](./05-web-improvements.md))._
+- **InteractiveScene** — selection, move/scale/rotate gizmos, key bindings.
+- **Live editor** — in-browser code editor (Monaco/CodeMirror) → sandboxed eval, Vite HMR hot-reload (the web replacement for IPython `embed`/`reload_scene`/`checkpoint_paste`).
 
-- **S9.1** Deterministic **export driver** (fixed-`dt` stepping to render target).
-- **S9.2** Video export — WebCodecs `VideoEncoder` + `mp4-muxer`; MediaRecorder fallback; transparent (`.mov`/WebM-alpha) option.
-- **S9.3** Image/SVG export; GIF.
-- **S9.4** Web improvements: responsive canvas, shareable scene URLs, embeddable `<kty-scene>` web component, perf (instancing, frustum culling, attribute reuse).
-- **S9.5** Audio via Web Audio API (optional).
+_Dropped (not library-shaped):_
 
-## Stage 10 — Parity sweep, docs, release
+- ~~Web-native authoring DSL~~ — the JS API is the authoring surface; a second DSL is needless surface area.
+- ~~Scene registry / `extract_scene`~~ — a CLI concept; a library consumer imports and calls directly.
 
-_Goal: close the gap to 1:1 and ship._
+## Stage 9 — Embeddability & export (library) + media demos (kty-doc)
 
-- **S10.1** Port any remaining `once_useful_constructs`/long-tail mobjects.
-- **S10.2** **Parity test suite**: port `example_scenes.py` + a curated set; diff against desktop-manim renders; track a parity scoreboard.
-- **S10.3** API docs + migration guide ("manim → kty" cheatsheet) + runnable examples gallery.
-- **S10.4** Perf budget pass (target 60fps for typical scenes; memory ceilings).
-- **S10.5** Versioned release; bundle-size budget; publish to npm + a demo site.
+_Goal: make kty pleasant to embed and able to emit frames. Heavy "make a video" media assembly is demonstrated in **kty-doc**, not shipped in the core bundle ([doc 05](./05-web-improvements.md))._
+
+- **S9.1** Deterministic **export driver** (fixed-`dt` stepping to a render target). **(library)**
+- **S9.3** Image/SVG export (`toPNG`/`toSVG`) — lightweight. **(library)**
+- **S9.4** Web improvements: responsive canvas, embeddable **`<kty-scene>` web component**, shareable scene URLs, perf (instancing, frustum culling, attribute reuse). **(library)**
+
+_Hosted in **kty-doc** (playground/showcase), not the core package:_
+
+- **Video export** — WebCodecs `VideoEncoder` + `mp4-muxer` (MediaRecorder fallback; transparent option). Built on S9.1's frame driver and demoed as a "record to mp4" button rather than a core dependency. _(Extract to an optional `@viesar/kty-export` package later only if real demand appears.)_
+- **Audio** (Web Audio API) and **GIF export** — video/app concerns; kty-doc demos.
+
+## Stage 10 — Parity, docs, release (the "real library" stage)
+
+_Goal: close the gap to 1:1 and make kty adoptable. Almost entirely library work; docs are the highest-leverage item._
+
+- **S10.1** Port remaining `once_useful_constructs`/long-tail mobjects — a library is judged by what it can draw.
+- **S10.2** **Parity test suite** (dev tooling, not shipped): port `example_scenes.py` + a curated set; diff against desktop-manim; track a parity scoreboard.
+- **S10.3** **API docs + migration guide** ("manim → kty" cheatsheet) + runnable examples gallery — **highest-priority adoption lever**.
+- **S10.4** Perf budget pass (60fps typical scenes; memory ceilings; bundle-size budget).
+- **S10.5** Versioned release; publish to npm + demo site. ✅ _initial release shipped (`@viesar/kty` on npm, docs site live); ongoing as the API stabilizes toward 1.0._
 
 ---
 
 ## Critical path
 
 ```
-S0 ─▶ S1 ─▶ S2 ─▶ S3 (GATE) ─┬─▶ S4 ─▶ S5 ─┬─▶ S8 ─▶ S9 ─▶ S10
+kty (library):
+S0 ─▶ S1 ─▶ S2 ─▶ S3 (GATE) ─┬─▶ S4 ─▶ S5 ─┬─▶ S8.1 ─▶ S9 (lib) ─▶ S10
                              ├─▶ S6          │
                              └─▶ S7 ─────────┘
+
+kty-doc (app, consumes the published library):
+   playground (InteractiveScene + live editor)  ·  video/audio/GIF export demos
 ```
 
-S3 is the gate. After it, S4/S6/S7 can run in parallel; S5 needs S4; S8 needs S5. Estimate stages in story-points only after the S3 spike, because it converts the largest unknown (stroke/fill parity) into a measured quantity.
+S3 is the gate. After it, S4/S6/S7 can run in parallel; S5 needs S4; the library's S8.1/S9 need S5. The **app-shaped** work (interactive editor, video/audio export) is built in **kty-doc** against the published package, so it doesn't block or bloat the core library. Estimate stages in story-points only after the S3 spike, because it converts the largest unknown (stroke/fill parity) into a measured quantity.
