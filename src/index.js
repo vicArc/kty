@@ -74,3 +74,7 @@ export * from './interaction/events.js';
 
 // Web component — <kty-scene> embeddable element (Stage 9.4)
 export * from './web/kty_scene.js';
+
+// Export — image (PNG) + SVG (Stage 9.3)
+export * from './export/svg.js';
+export * from './export/image.js';

@@ -11,11 +11,17 @@ import { buildImageObject3D } from './image_geometry.js';
 import { Camera } from '../../camera/camera.js';
 
 export class ThreeRenderer extends RenderBackend {
-  constructor({ width = 1920, height = 1080, camera = new Camera() } = {}) {
+  constructor({
+    width = 1920,
+    height = 1080,
+    camera = new Camera(),
+    preserveDrawingBuffer = false,
+  } = {}) {
     super();
     this.width = width;
     this.height = height;
     this.camera = camera;
+    this.preserveDrawingBuffer = preserveDrawingBuffer;
     this.scene = new THREE.Scene();
     // Parse as sRGB so the background matches the configured hex (see vmobject_geometry).
     this.scene.background = new THREE.Color(camera.backgroundColor);
@@ -88,7 +94,12 @@ export class ThreeRenderer extends RenderBackend {
 
   /** Attach to a real canvas, creating the WebGL renderer (browser only). */
   attach(canvas) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: true,
+      preserveDrawingBuffer: this.preserveDrawingBuffer,
+    });
     this.renderer.setSize(this.width, this.height, false);
     this.renderer.setPixelRatio(globalThis.devicePixelRatio || 1);
     return this;
