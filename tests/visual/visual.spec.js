@@ -18,6 +18,9 @@ const SCENES = [
   'sphere',
   'torus',
   'cube',
+  'dots',
+  'glow',
+  'image',
 ];
 
 for (const id of SCENES) {

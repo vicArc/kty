@@ -37,6 +37,10 @@ export * from './mobject/coordinate_systems.js';
 export * from './mobject/surface.js';
 export * from './mobject/three_dimensions.js';
 
+// Point clouds & images (Stage 6: S6.5)
+export * from './mobject/point_cloud.js';
+export * from './mobject/image_mobject.js';
+
 // Text & Tex (Stage 7)
 export * from './mobject/svg/svg_path.js';
 export * from './mobject/svg/svg_mobject.js';
@@ -60,5 +64,7 @@ export * from './camera/camera.js';
 export * from './render/render_backend.js';
 export * from './render/three/vmobject_geometry.js';
 export * from './render/three/surface_geometry.js';
+export * from './render/three/points_geometry.js';
+export * from './render/three/image_geometry.js';
 export * from './render/three/three_renderer.js';
 export * from './render/three/shader_insert.js';
