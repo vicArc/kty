@@ -159,11 +159,12 @@ export const SCENES = {
   streamlines: () => {
     const plane = new NumberPlane({ xRange: [-6, 6, 1], yRange: [-3.5, 3.5, 1] });
     plane.setStroke('#33414C', 1, 0.3);
+    // Kept light (≈45 lines × 45 steps) so the gate's frame stays stable.
     const sl = new StreamLines({
       func: (x, y) => [Math.cos(y), Math.sin(x)],
       coordinateSystem: plane,
-      density: 1.5,
-      nSteps: 70,
+      density: 0.75,
+      nSteps: 45,
       dt: 0.06,
       strokeWidth: 2,
     });
