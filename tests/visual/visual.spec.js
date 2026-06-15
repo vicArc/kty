@@ -21,6 +21,8 @@ const SCENES = [
   'dots',
   'glow',
   'image',
+  'vectorfield',
+  'streamlines',
 ];
 
 for (const id of SCENES) {
