@@ -140,3 +140,55 @@ export function approxSmoothQuadraticBezierHandles(points) {
   const bottom = [lastStl, ...stl.slice().reverse()];
   return top.map((t, i) => t.map((c, d) => 0.5 * (c + bottom[i][d])));
 }
+
+/**
+ * Natural cubic-spline handle points through a sequence of anchors (open curve),
+ * solved with the Thomas tridiagonal algorithm per dimension. Returns
+ * [firstHandles, secondHandles], one cubic handle pair per segment. Used by
+ * VMobject's 'true_smooth' anchor mode.
+ */
+export function getSmoothCubicBezierHandlePoints(points) {
+  const n = points.length - 1; // number of segments
+  const dim = points[0].length;
+  if (n < 1) return [[], []];
+  if (n === 1) {
+    const h1 = points[0].map((c, d) => c + (points[1][d] - c) / 3);
+    const h2 = points[0].map((c, d) => c + (2 * (points[1][d] - c)) / 3);
+    return [[h1], [h2]];
+  }
+  const P1 = Array.from({ length: n }, () => new Array(dim).fill(0));
+  const P2 = Array.from({ length: n }, () => new Array(dim).fill(0));
+  for (let d = 0; d < dim; d++) {
+    const K = points.map((p) => p[d]);
+    const a = new Array(n);
+    const b = new Array(n);
+    const c = new Array(n);
+    const r = new Array(n);
+    a[0] = 0;
+    b[0] = 2;
+    c[0] = 1;
+    r[0] = K[0] + 2 * K[1];
+    for (let i = 1; i < n - 1; i++) {
+      a[i] = 1;
+      b[i] = 4;
+      c[i] = 1;
+      r[i] = 4 * K[i] + 2 * K[i + 1];
+    }
+    a[n - 1] = 2;
+    b[n - 1] = 7;
+    c[n - 1] = 0;
+    r[n - 1] = 8 * K[n - 1] + K[n];
+    for (let i = 1; i < n; i++) {
+      const m = a[i] / b[i - 1];
+      b[i] -= m * c[i - 1];
+      r[i] -= m * r[i - 1];
+    }
+    const x = new Array(n);
+    x[n - 1] = r[n - 1] / b[n - 1];
+    for (let i = n - 2; i >= 0; i--) x[i] = (r[i] - c[i] * x[i + 1]) / b[i];
+    for (let i = 0; i < n; i++) P1[i][d] = x[i];
+    for (let i = 0; i < n - 1; i++) P2[i][d] = 2 * K[i + 1] - x[i + 1];
+    P2[n - 1][d] = (K[n] + x[n - 1]) / 2;
+  }
+  return [P1, P2];
+}
