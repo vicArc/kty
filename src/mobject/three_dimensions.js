@@ -5,7 +5,21 @@
 
 import { Surface } from './surface.js';
 import { Mobject } from './mobject.js';
-import { ORIGIN, RIGHT, UP, LEFT, DOWN, PI, TAU, BLUE, GREY } from '../foundation/constants.js';
+import {
+  ORIGIN,
+  RIGHT,
+  UP,
+  LEFT,
+  DOWN,
+  OUT,
+  PI,
+  TAU,
+  BLUE,
+  GREY,
+} from '../foundation/constants.js';
+import { getNorm, zToVector } from '../foundation/space_ops.js';
+
+const isOut = (v) => v[0] === 0 && v[1] === 0 && v[2] > 0;
 
 export class Sphere extends Surface {
   constructor({
@@ -109,5 +123,61 @@ export class Prism extends Cube {
     [width, height, depth].forEach((value, dim) =>
       this.rescaleToFit(value, dim, { stretch: true })
     );
+  }
+}
+
+export class Cylinder extends Surface {
+  constructor({
+    uvFunc = (u, v) => [Math.cos(u), Math.sin(u), v],
+    uRange = [0, TAU],
+    vRange = [-1, 1],
+    resolution = [101, 11],
+    height = 2,
+    radius = 1,
+    axis = OUT,
+    color = BLUE,
+    ...rest
+  } = {}) {
+    super({ ...rest, color, uvFunc, uRange, vRange, resolution });
+    this.scale(radius);
+    this.setDepth(height, { stretch: true });
+    if (!isOut(axis)) this.applyMatrix(zToVector(axis));
+  }
+}
+
+export class Cone extends Cylinder {
+  constructor({ vRange = [0, 1], ...rest } = {}) {
+    super({
+      uvFunc: (u, v) => [(1 - v) * Math.cos(u), (1 - v) * Math.sin(u), v],
+      vRange,
+      ...rest,
+    });
+  }
+}
+
+export class Line3D extends Cylinder {
+  constructor({ start, end, width = 0.05, resolution = [21, 25], ...rest } = {}) {
+    const axis = end.map((c, i) => c - start[i]);
+    super({ height: getNorm(axis), radius: width / 2, axis, resolution, ...rest });
+    this.shift(start.map((c, i) => 0.5 * (c + end[i])));
+  }
+}
+
+export class Disk3D extends Surface {
+  constructor({
+    radius = 1,
+    uRange = [0, 1],
+    vRange = [0, TAU],
+    resolution = [2, 100],
+    ...rest
+  } = {}) {
+    super({
+      ...rest,
+      uvFunc: (u, v) => [u * Math.cos(v), u * Math.sin(v), 0],
+      uRange,
+      vRange,
+      resolution,
+    });
+    this.scale(radius);
   }
 }
