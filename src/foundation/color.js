@@ -1,6 +1,5 @@
 // Port of the core of manimlib/utils/color.py.
 // Colors are hex strings ("#RRGGBB") or rgb arrays [r,g,b] in 0..1.
-// HSL interpolation and matplotlib colormaps are deferred to Stage 6.
 
 /** "#RRGGBB" → [r, g, b] in 0..1. */
 export function hexToRgb(hex) {
@@ -85,4 +84,82 @@ export function averageColor(...colors) {
     Math.sqrt(rgbs.reduce((s, c) => s + c[j] * c[j], 0) / rgbs.length)
   );
   return rgbToHex(mean);
+}
+
+// --- HSL (S1.3) — h, s, l all in 0..1 ---
+
+/** [r, g, b] (0..1) → [h, s, l] (0..1). */
+export function rgbToHsl(rgb) {
+  const [r, g, b] = colorToRgb(rgb);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+  if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  return [h / 6, s, l];
+}
+
+/** [h, s, l] (0..1) → [r, g, b] (0..1). */
+export function hslToRgb([h, s, l]) {
+  if (s === 0) return [l, l, l];
+  const hue2rgb = (p, q, t) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return [hue2rgb(p, q, h + 1 / 3), hue2rgb(p, q, h), hue2rgb(p, q, h - 1 / 3)];
+}
+
+/** Build a hex color from h, s, l (0..1). */
+export function hsl(h, s, l) {
+  return rgbToHex(hslToRgb([h, s, l]));
+}
+
+// --- Colormaps (S1.3) — anchor-based approximations of matplotlib maps ---
+
+export const COLORMAPS = {
+  viridis: ['#440154', '#414487', '#2A788E', '#22A884', '#7AD151', '#FDE725'],
+  magma: ['#000004', '#3B0F70', '#8C2981', '#DE4968', '#FE9F6D', '#FCFDBF'],
+  inferno: ['#000004', '#420A68', '#932667', '#DD513A', '#FCA50A', '#FCFFA4'],
+  plasma: ['#0D0887', '#6A00A8', '#B12A90', '#E16462', '#FCA636', '#F0F921'],
+  coolwarm: ['#3B4CC0', '#7B9FF9', '#C2C2C2', '#F6A385', '#B40426'],
+  jet: ['#000080', '#0000FF', '#00FFFF', '#FFFF00', '#FF0000', '#800000'],
+  rainbow: ['#6E40AA', '#417DE0', '#1AC7C2', '#52F667', '#D2E935', '#FF8C38', '#E5414E'],
+  grey: ['#000000', '#FFFFFF'],
+  gray: ['#000000', '#FFFFFF'],
+  '3b1b_colormap': ['#236B8E', '#83C167', '#FFFF00', '#FC6255'],
+};
+
+/** Resolve a colormap name (or array of anchor colors) to anchor colors. */
+function resolveColormap(name) {
+  const anchors = Array.isArray(name) ? name : COLORMAPS[name];
+  if (!anchors) throw new Error(`Unknown colormap: ${name}`);
+  return anchors;
+}
+
+/** A colormap as a function `t in [0,1] -> hex`. Accepts a name or color array. */
+export function getColormap(name) {
+  const anchors = resolveColormap(name);
+  return (t) => {
+    const tt = Math.max(0, Math.min(1, t));
+    if (anchors.length === 1) return rgbToHex(colorToRgb(anchors[0]));
+    const x = tt * (anchors.length - 1);
+    const i = Math.min(Math.floor(x), anchors.length - 2);
+    return interpolateColor(anchors[i], anchors[i + 1], x - i);
+  };
+}
+
+/** `n` evenly-sampled colors from a colormap (name or color array). */
+export function getColormapColors(name, n = 256) {
+  return colorGradient(resolveColormap(name), n);
 }
