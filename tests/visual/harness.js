@@ -30,6 +30,7 @@ const {
   VectorField,
   StreamLines,
   Matrix,
+  Brace,
   TAU,
 } = kty;
 
@@ -156,6 +157,12 @@ export const SCENES = {
       strokeWidth: 4,
     });
     return { mobjects: [plane, vf] };
+  },
+  brace: () => {
+    const expr = new Tex('a + b + c', { color: '#FFFFFF' }).scale(1.5);
+    const brace = new Brace(expr, { direction: [0, -1, 0] }).setColor('#58C4DD');
+    const label = brace.getText('sum', { color: '#FC6255' });
+    return { mobjects: [expr, brace, label] };
   },
   matrix: () => {
     const m = new Matrix(
