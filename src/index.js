@@ -53,6 +53,7 @@ export * from './animation/numbers.js';
 export * from './animation/animation.js';
 export * from './animation/transform.js';
 export * from './animation/creation.js';
+export * from './animation/growing.js';
 export * from './animation/fading.js';
 export * from './animation/composition.js';
 export * from './animation/rotation.js';
