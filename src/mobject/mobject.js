@@ -146,6 +146,27 @@ export class Mobject {
     return this.getPoints();
   }
 
+  /**
+   * True if two mobjects have the same point set up to translation and uniform
+   * scale (manim's has_same_shape_as) — used by TransformMatching* to pair parts.
+   */
+  hasSameShapeAs(mobject) {
+    const p1 = this.getAllPoints();
+    const p2 = mobject.getAllPoints();
+    if (p1.length !== p2.length) return false;
+    const c1 = this.getCenter();
+    const c2 = mobject.getCenter();
+    const h1 = this.getHeight() || 1;
+    const h2 = mobject.getHeight() || 1;
+    const atol = (this.getWidth() || 1) * 1e-2;
+    for (let i = 0; i < p1.length; i++) {
+      for (let d = 0; d < 3; d++) {
+        if (Math.abs((p1[i][d] - c1[d]) / h1 - (p2[i][d] - c2[d]) / h2) > atol) return false;
+      }
+    }
+    return true;
+  }
+
   applyPointsFunction(
     func,
     { aboutPoint = null, aboutEdge = ORIGIN, worksOnBoundingBox = false } = {}
