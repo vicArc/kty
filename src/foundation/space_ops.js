@@ -87,3 +87,24 @@ export function rotateVector2d(vector, angle) {
   const s = Math.sin(angle);
   return [vector[0] * c - vector[1] * s, vector[0] * s + vector[1] * c];
 }
+
+/**
+ * A rotation matrix mapping OUT ([0,0,1]) onto the direction of `vector`
+ * (manim's z_to_vector) — used to orient cylinders/lines along an arbitrary axis.
+ */
+export function zToVector(vector) {
+  const v = normalize(vector);
+  const axis = cross([0, 0, 1], v);
+  const axisNorm = getNorm(axis);
+  if (axisNorm < 1e-8) {
+    // Parallel to ±z: identity, or a 180° flip for -z.
+    return v[2] >= 0
+      ? [
+          [1, 0, 0],
+          [0, 1, 0],
+          [0, 0, 1],
+        ]
+      : rotationMatrix(Math.PI, [1, 0, 0]);
+  }
+  return rotationMatrix(Math.acos(clip(v[2], -1, 1)), axis);
+}

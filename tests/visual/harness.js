@@ -24,6 +24,10 @@ const {
   Sphere,
   Torus,
   Cube,
+  Cylinder,
+  Cone,
+  Line3D,
+  Disk3D,
   DotCloud,
   GlowDots,
   ImageMobject,
@@ -106,6 +110,15 @@ export const SCENES = {
   cube: () => ({
     mobjects: [new Cube({ sideLength: 2.4, color: '#83C167' })],
     reorient: [-40, 75],
+  }),
+  solids3d: () => ({
+    mobjects: [
+      new Cylinder({ radius: 0.8, height: 2.2, color: '#58C4DD' }).shift([-3.2, 0, 0]),
+      new Cone({ radius: 1, height: 2, color: '#FC6255' }).shift([-0.5, -1, 0]),
+      new Disk3D({ radius: 1.1, color: '#FFFF00' }).shift([2.4, 0.2, 0]),
+      new Line3D({ start: [-4, -1.7, 0], end: [4, -1.7, 0], width: 0.12, color: '#83C167' }),
+    ],
+    reorient: [-25, 70],
   }),
   dots: () => {
     const cols = 21;
