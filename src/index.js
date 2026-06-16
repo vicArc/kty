@@ -55,6 +55,7 @@ export * from './animation/numbers.js';
 // Animation system (Stage 5)
 export * from './animation/animation.js';
 export * from './animation/transform.js';
+export * from './animation/transform_matching_parts.js';
 export * from './animation/creation.js';
 export * from './animation/growing.js';
 export * from './animation/indication.js';
