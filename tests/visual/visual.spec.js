@@ -23,6 +23,7 @@ const SCENES = [
   'image',
   'vectorfield',
   'streamlines',
+  'matrix',
 ];
 
 for (const id of SCENES) {
