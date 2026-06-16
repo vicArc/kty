@@ -400,6 +400,13 @@ export class VMobject extends Mobject {
     this.setPoints(newPoints);
     return this;
   }
+
+  /** Copy another VMobject's points and subpath structure (manim's match_points). */
+  matchPoints(vmobject) {
+    this.subpathStartIndices = [...(vmobject.subpathStartIndices ?? [0])];
+    this.setPoints(vmobject.getPoints());
+    return this;
+  }
 }
 
 // Local copy to avoid a circular import with foundation/bezier arc helper.
