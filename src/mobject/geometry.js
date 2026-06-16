@@ -15,7 +15,14 @@ import {
   YELLOW,
 } from '../foundation/constants.js';
 import { quadraticBezierPointsForArc } from '../foundation/bezier.js';
-import { rotateVector, getNorm, normalize, angleOfVector } from '../foundation/space_ops.js';
+import {
+  rotateVector,
+  getNorm,
+  normalize,
+  angleOfVector,
+  angleBetweenVectors,
+  cross2d,
+} from '../foundation/space_ops.js';
 
 const DEFAULT_DOT_RADIUS = 0.08;
 const DEFAULT_SMALL_DOT_RADIUS = 0.04;
@@ -170,6 +177,50 @@ export class Polygon extends VMobject {
   }
   getVertices() {
     return this.getStartAnchors();
+  }
+
+  /** Replace sharp corners with circular arcs (manim's round_corners). */
+  roundCorners(radius = null) {
+    const verts = this.getVertices();
+    const n = verts.length;
+    if (n < 3) return this;
+    if (radius === null) {
+      let minEdge = Infinity;
+      for (let i = 0; i < n; i++) {
+        const d = getNorm(sub(verts[(i + 1) % n], verts[i]));
+        if (d > 1e-6 && d < minEdge) minEdge = d;
+      }
+      radius = 0.25 * minEdge;
+    }
+
+    const arcs = [];
+    for (let i = 0; i < n; i++) {
+      const v1 = verts[(i - 1 + n) % n];
+      const v2 = verts[i];
+      const v3 = verts[(i + 1) % n];
+      const vect1 = normalize(sub(v2, v1));
+      const vect2 = normalize(sub(v3, v2));
+      const angle = angleBetweenVectors(vect1, vect2);
+      const cutOff = radius * Math.tan(angle / 2);
+      const sign = Math.sign(radius * cross2d(vect1, vect2)) || 1;
+      arcs.push(
+        new ArcBetweenPoints({
+          start: sub(v2, scaleVec(vect1, cutOff)),
+          end: add(v2, scaleVec(vect2, cutOff)),
+          angle: sign * angle,
+        })
+      );
+    }
+
+    this.clearPoints();
+    const ordered = [arcs[n - 1], ...arcs.slice(0, -1)];
+    for (let i = 0; i < ordered.length; i++) {
+      const arc1 = ordered[i];
+      const arc2 = ordered[(i + 1) % ordered.length];
+      this.addSubpath(arc1.getPoints());
+      this.addLineTo(arc2.getStart());
+    }
+    return this.noteChangedData();
   }
 }
 

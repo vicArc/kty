@@ -104,3 +104,39 @@ export function quadraticBezierPointsForArc(angle, nComponents = 8) {
   }
   return points;
 }
+
+/**
+ * Handles that make a sequence of anchors into an approximately-smooth quadratic
+ * bezier path (manim's approx_smooth_quadratic_bezier_handles): one handle per
+ * adjacent anchor pair, blending the parabola through the right neighbour with
+ * the one through the left neighbour.
+ */
+export function approxSmoothQuadraticBezierHandles(points) {
+  const n = points.length;
+  if (n === 1) return [points[0].slice()];
+  if (n === 2) return [points[0].map((c, d) => 0.5 * (c + points[1][d]))];
+
+  // w0*P[i] + w1*P[i+1] + w2*P[i+2]
+  const comb = (a, b, c, w0, w1, w2) => a.map((_, d) => w0 * a[d] + w1 * b[d] + w2 * c[d]);
+  const close = (a, b) => a.every((c, d) => Math.abs(c - b[d]) < 1e-6);
+
+  const str = []; // smooth_to_right
+  for (let i = 0; i <= n - 3; i++)
+    str.push(comb(points[i], points[i + 1], points[i + 2], 0.25, 1, -0.25));
+  const rev = points.slice().reverse();
+  const stl = []; // smooth_to_left (computed on the reversed anchors)
+  for (let i = 0; i <= n - 3; i++) stl.push(comb(rev[i], rev[i + 1], rev[i + 2], 0.25, 1, -0.25));
+
+  let lastStr, lastStl;
+  if (close(points[0], points[n - 1])) {
+    lastStr = comb(points[n - 2], points[n - 1], points[1], 0.25, 1, -0.25);
+    lastStl = comb(points[1], points[0], points[n - 2], 0.25, 1, -0.25);
+  } else {
+    lastStr = stl[0];
+    lastStl = str[0];
+  }
+
+  const top = [...str, lastStr];
+  const bottom = [lastStl, ...stl.slice().reverse()];
+  return top.map((t, i) => t.map((c, d) => 0.5 * (c + bottom[i][d])));
+}

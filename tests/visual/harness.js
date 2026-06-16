@@ -158,6 +158,24 @@ export const SCENES = {
     });
     return { mobjects: [plane, vf] };
   },
+  smoothing: () => {
+    // A smooth curve through anchors (setPointsSmoothly) + a rounded square.
+    const wave = new VMobject()
+      .setPointsSmoothly([
+        [-5, 0, 0],
+        [-2.5, 1.4, 0],
+        [0, 0, 0],
+        [2.5, -1.4, 0],
+        [5, 0, 0],
+      ])
+      .setStroke('#58C4DD', 5, 1)
+      .shift([0, 1.4, 0]);
+    const rsq = new Square({ sideLength: 2.4, fillColor: '#FC6255', fillOpacity: 1 }).shift([
+      0, -1.7, 0,
+    ]);
+    rsq.roundCorners(0.55);
+    return { mobjects: [wave, rsq] };
+  },
   brace: () => {
     const expr = new Tex('a + b + c', { color: '#FFFFFF' }).scale(1.5);
     const brace = new Brace(expr, { direction: [0, -1, 0] }).setColor('#58C4DD');
