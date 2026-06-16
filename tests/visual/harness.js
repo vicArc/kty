@@ -29,6 +29,7 @@ const {
   ImageMobject,
   VectorField,
   StreamLines,
+  Matrix,
   TAU,
 } = kty;
 
@@ -155,6 +156,17 @@ export const SCENES = {
       strokeWidth: 4,
     });
     return { mobjects: [plane, vf] };
+  },
+  matrix: () => {
+    const m = new Matrix(
+      [
+        [1, 2, 3],
+        [4, 5, 6],
+      ],
+      { elementConfig: { color: '#FFFFFF' } }
+    ).scale(1.3);
+    m.setColumnColors('#58C4DD', '#FC6255', '#83C167');
+    return { mobjects: [m] };
   },
   streamlines: () => {
     // Light (≈28 lines × 35 steps, no background grid) so the frame renders fast
