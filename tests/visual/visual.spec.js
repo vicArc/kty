@@ -24,6 +24,7 @@ const SCENES = [
   'vectorfield',
   'streamlines',
   'matrix',
+  'brace',
 ];
 
 for (const id of SCENES) {
