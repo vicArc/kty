@@ -74,3 +74,14 @@ export class TransformMatchingParts extends AnimationGroup {
 
 /** Match parts purely by shape (the common case). */
 export class TransformMatchingShapes extends TransformMatchingParts {}
+
+/**
+ * Transform one Tex/Text into another, matching glyphs by shape so shared
+ * symbols slide into place while the rest fade. Pass `matchedPairs` of glyph
+ * sub-groups (e.g. `[source.submobjects.slice(0, 3), target.submobjects.slice(2, 5)]`)
+ * to force specific correspondences.
+ *
+ * (manim's substring-key matching — matched_keys / key_map — needs StringMobject
+ * isolation, which isn't ported yet; shape matching covers the common case.)
+ */
+export class TransformMatchingTex extends TransformMatchingParts {}
