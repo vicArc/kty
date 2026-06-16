@@ -27,6 +27,8 @@ const {
   DotCloud,
   GlowDots,
   ImageMobject,
+  VectorField,
+  StreamLines,
   TAU,
 } = kty;
 
@@ -142,6 +144,32 @@ export const SCENES = {
     ctx.fillStyle = '#FFFF00';
     ctx.fillRect(18, 18, 22, 22);
     return { mobjects: [new ImageMobject(cv, { height: 4.5 })] };
+  },
+  vectorfield: () => {
+    const plane = new NumberPlane({ xRange: [-6, 6, 1], yRange: [-3.5, 3.5, 1] });
+    plane.setStroke('#3C5A6E', 1, 0.4);
+    const vf = new VectorField({
+      func: (x, y) => [-y * 0.7, x * 0.7],
+      coordinateSystem: plane,
+      density: 1,
+      strokeWidth: 4,
+    });
+    return { mobjects: [plane, vf] };
+  },
+  streamlines: () => {
+    // Light (≈28 lines × 35 steps, no background grid) so the frame renders fast
+    // enough under CI's software GL to settle within the screenshot window.
+    const axes = new Axes({ xRange: [-6, 6, 1], yRange: [-3.5, 3.5, 1] });
+    axes.setStroke('#33414C', 1, 0);
+    const sl = new StreamLines({
+      func: (x, y) => [Math.cos(y), Math.sin(x)],
+      coordinateSystem: axes,
+      density: 0.5,
+      nSteps: 35,
+      dt: 0.07,
+      strokeWidth: 2,
+    });
+    return { mobjects: [sl] };
   },
 };
 

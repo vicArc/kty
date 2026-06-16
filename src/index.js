@@ -41,6 +41,9 @@ export * from './mobject/three_dimensions.js';
 export * from './mobject/point_cloud.js';
 export * from './mobject/image_mobject.js';
 
+// Vector fields (Stage 6: S6.6)
+export * from './mobject/vector_field.js';
+
 // Text & Tex (Stage 7)
 export * from './mobject/svg/svg_path.js';
 export * from './mobject/svg/svg_mobject.js';
