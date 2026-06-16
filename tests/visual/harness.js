@@ -157,18 +157,19 @@ export const SCENES = {
     return { mobjects: [plane, vf] };
   },
   streamlines: () => {
-    const plane = new NumberPlane({ xRange: [-6, 6, 1], yRange: [-3.5, 3.5, 1] });
-    plane.setStroke('#33414C', 1, 0.3);
-    // Kept light (≈45 lines × 45 steps) so the gate's frame stays stable.
+    // Light (≈28 lines × 35 steps, no background grid) so the frame renders fast
+    // enough under CI's software GL to settle within the screenshot window.
+    const axes = new Axes({ xRange: [-6, 6, 1], yRange: [-3.5, 3.5, 1] });
+    axes.setStroke('#33414C', 1, 0);
     const sl = new StreamLines({
       func: (x, y) => [Math.cos(y), Math.sin(x)],
-      coordinateSystem: plane,
-      density: 0.75,
-      nSteps: 45,
-      dt: 0.06,
+      coordinateSystem: axes,
+      density: 0.5,
+      nSteps: 35,
+      dt: 0.07,
       strokeWidth: 2,
     });
-    return { mobjects: [plane, sl] };
+    return { mobjects: [sl] };
   },
 };
 

@@ -35,6 +35,8 @@ for (const id of SCENES) {
     expect(err, `scene "${id}" threw`).toBeFalsy();
     // Let a couple of frames render so the canvas is fully drawn.
     await page.waitForTimeout(300);
-    await expect(page.locator('#stage')).toHaveScreenshot(`${id}.png`);
+    // Heavier scenes (vector fields, 3D) re-render slowly under CI's software GL;
+    // give the frame-stability check extra time to settle.
+    await expect(page.locator('#stage')).toHaveScreenshot(`${id}.png`, { timeout: 20_000 });
   });
 }
