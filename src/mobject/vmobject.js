@@ -123,6 +123,19 @@ export class VMobject extends Mobject {
     return this;
   }
 
+  /** Copy another VMobject's stroke + fill style onto this one (manim's match_style). */
+  matchStyle(vmobject) {
+    const live = this.familyMembersWithPoints();
+    const others = vmobject.familyMembersWithPoints();
+    if (others.length === 0) return this;
+    for (let i = 0; i < live.length; i++) {
+      const o = others[Math.min(i, others.length - 1)];
+      live[i].setStroke(o.getStrokeColor(), o.getStrokeWidth(), o.getStrokeOpacity());
+      live[i].setFill(o.getFillColor(), o.getFillOpacity());
+    }
+    return this;
+  }
+
   setOpacity(opacity, recurse = true) {
     this.setStroke(null, null, opacity, false);
     this.setFill(null, opacity, false);

@@ -61,6 +61,7 @@ export * from './animation/transform_matching_parts.js';
 export * from './animation/creation.js';
 export * from './animation/growing.js';
 export * from './animation/indication.js';
+export * from './animation/movement.js';
 export * from './animation/fading.js';
 export * from './animation/composition.js';
 export * from './animation/rotation.js';
