@@ -18,6 +18,7 @@ import {
   integerInterpolate,
   inverseInterpolate,
   partialQuadraticBezierPoints,
+  approxSmoothQuadraticBezierHandles,
 } from '../foundation/bezier.js';
 import { listify, resizeWithInterpolation } from '../foundation/iterables.js';
 
@@ -214,6 +215,61 @@ export class VMobject extends Mobject {
   addPointsAsCorners(points) {
     for (const p of points) this.addLineTo(p);
     return this;
+  }
+
+  /** Set the path as a smooth quadratic curve through `points` (S4.1). */
+  setPointsSmoothly(points, approx = true) {
+    this.setPointsAsCorners(points);
+    this.makeSmooth(approx);
+    return this;
+  }
+
+  /**
+   * Recompute handles so the path passes smoothly through its anchors.
+   * (manim's `true_smooth` mode — which can add points — is not ported; the
+   * `approx` parameter is kept for API compatibility.)
+   */
+  makeSmooth(approx = true, recurse = true) {
+    void approx;
+    for (const sm of this.getFamily(recurse)) {
+      if (sm.changeAnchorMode) sm.changeAnchorMode('approx_smooth');
+    }
+    return this;
+  }
+
+  /** Straight-line segments between anchors (no curvature). */
+  makeJagged(recurse = true) {
+    for (const sm of this.getFamily(recurse)) {
+      if (sm.changeAnchorMode) sm.changeAnchorMode('jagged');
+    }
+    return this;
+  }
+
+  /** Recompute each subpath's handles for 'approx_smooth' or 'jagged' anchoring. */
+  changeAnchorMode(mode) {
+    if (this.getNumPoints() === 0) return this;
+    const subpaths = this.getSubpaths();
+    this._resetPath();
+    for (const subpath of subpaths) {
+      const anchors = subpath.filter((_, i) => i % 2 === 0);
+      const handles =
+        mode === 'jagged'
+          ? anchors.slice(0, -1).map((a, i) => midpoint(a, anchors[i + 1]))
+          : approxSmoothQuadraticBezierHandles(anchors);
+      const newSub = [];
+      for (let i = 0; i < anchors.length; i++) {
+        newSub.push(anchors[i]);
+        if (i < handles.length) newSub.push(handles[i]);
+      }
+      // Nudge handles that landed on an anchor (avoids degenerate curves).
+      for (let i = 0; i + 2 < newSub.length; i += 2) {
+        const [a0, h, a1] = [newSub[i], newSub[i + 1], newSub[i + 2]];
+        const eq = (p, q) => p.every((c, d) => Math.abs(c - q[d]) < 1e-8);
+        if (eq(h, a0) || eq(h, a1)) newSub[i + 1] = midpoint(a0, a1);
+      }
+      this.addSubpath(newSub);
+    }
+    return this.noteChangedData();
   }
 
   /** Set a single subpath directly from anchor/handle/anchor points (length 2k+1). */

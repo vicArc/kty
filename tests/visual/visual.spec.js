@@ -25,6 +25,7 @@ const SCENES = [
   'streamlines',
   'matrix',
   'brace',
+  'smoothing',
 ];
 
 for (const id of SCENES) {
