@@ -19,6 +19,7 @@ import {
   inverseInterpolate,
   partialQuadraticBezierPoints,
   approxSmoothQuadraticBezierHandles,
+  getSmoothCubicBezierHandlePoints,
 } from '../foundation/bezier.js';
 import { listify, resizeWithInterpolation } from '../foundation/iterables.js';
 
@@ -239,13 +240,13 @@ export class VMobject extends Mobject {
 
   /**
    * Recompute handles so the path passes smoothly through its anchors.
-   * (manim's `true_smooth` mode — which can add points — is not ported; the
-   * `approx` parameter is kept for API compatibility.)
+   * `approx` (default) keeps the point count via one handle per segment;
+   * `approx=false` ('true_smooth') fits a natural cubic spline (more points).
    */
   makeSmooth(approx = true, recurse = true) {
-    void approx;
+    const mode = approx ? 'approx_smooth' : 'true_smooth';
     for (const sm of this.getFamily(recurse)) {
-      if (sm.changeAnchorMode) sm.changeAnchorMode('approx_smooth');
+      if (sm.changeAnchorMode) sm.changeAnchorMode(mode);
     }
     return this;
   }
@@ -258,13 +259,23 @@ export class VMobject extends Mobject {
     return this;
   }
 
-  /** Recompute each subpath's handles for 'approx_smooth' or 'jagged' anchoring. */
+  /** Recompute each subpath for 'approx_smooth', 'true_smooth', or 'jagged' anchoring. */
   changeAnchorMode(mode) {
     if (this.getNumPoints() === 0) return this;
     const subpaths = this.getSubpaths();
     this._resetPath();
     for (const subpath of subpaths) {
       const anchors = subpath.filter((_, i) => i % 2 === 0);
+      if (mode === 'true_smooth') {
+        // Natural cubic spline, each cubic split into two quadratics.
+        if (anchors.length < 2) continue;
+        const [h1s, h2s] = getSmoothCubicBezierHandlePoints(anchors);
+        this.startNewPath(anchors[0]);
+        for (let i = 0; i < anchors.length - 1; i++) {
+          this.addCubicBezierCurveTo(h1s[i], h2s[i], anchors[i + 1]);
+        }
+        continue;
+      }
       const handles =
         mode === 'jagged'
           ? anchors.slice(0, -1).map((a, i) => midpoint(a, anchors[i + 1]))
