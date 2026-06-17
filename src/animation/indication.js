@@ -1,12 +1,13 @@
 // Indication animations — port of manimlib/animation/indication.py. Draws the
 // viewer's eye to a mobject (or point). Animations needing per-vertex stroke
-// width (VShowPassingFlash/FlashAround) or Homotopy (ApplyWave) are deferred.
+// width (VShowPassingFlash/FlashAround) are deferred.
 
 import { Animation } from './animation.js';
 import { Transform } from './transform.js';
 import { AnimationGroup, Succession } from './composition.js';
 import { ShowPartial, ShowCreation } from './creation.js';
 import { FadeOut } from './fading.js';
+import { Homotopy } from './movement.js';
 import { Circle, Dot, Line } from '../mobject/geometry.js';
 import { VMobject, VGroup } from '../mobject/vmobject.js';
 import { interpolate } from '../foundation/bezier.js';
@@ -16,7 +17,9 @@ import {
   GREY,
   TAU,
   OUT,
+  UP,
   ORIGIN,
+  DEGREES,
   SMALL_BUFF,
   FRAME_X_RADIUS,
   FRAME_Y_RADIUS,
@@ -187,5 +190,35 @@ export class WiggleOutThenIn extends Animation {
     submob.rotate(wiggle(alpha, this.nWiggles) * this.rotationAngle, OUT, {
       aboutPoint: this.rotateAboutPoint ?? this.mobject.getCenter(),
     });
+  }
+}
+
+/** A wave that travels across a mobject (manim's ApplyWave). */
+export class ApplyWave extends Homotopy {
+  constructor(mobject, { direction = UP, amplitude = 0.2, runTime = 1.0, ...opts } = {}) {
+    const leftX = mobject.getBoundingBoxPoint([-1, 0, 0])[0];
+    const rightX = mobject.getBoundingBoxPoint([1, 0, 0])[0];
+    const span = rightX - leftX || 1;
+    const vect = direction.map((c) => amplitude * c);
+    const homotopy = (x, y, z, t) => {
+      const alpha = (x - leftX) / span;
+      const power = Math.exp(2 * (alpha - 0.5));
+      const nudge = thereAndBack(Math.pow(t, power));
+      return [x + nudge * vect[0], y + nudge * vect[1], z + nudge * vect[2]];
+    };
+    super(homotopy, mobject, { runTime, ...opts });
+  }
+}
+
+/** Turn a mobject inside out by reversing its winding (manim's TurnInsideOut). */
+export class TurnInsideOut extends Transform {
+  constructor(mobject, { pathArc = 90 * DEGREES, ...opts } = {}) {
+    super(mobject, null, { pathArc, ...opts });
+  }
+
+  createTarget() {
+    const target = this.mobject.copy();
+    for (const sm of target.getFamily()) if (sm.reversePoints) sm.reversePoints();
+    return target;
   }
 }

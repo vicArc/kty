@@ -372,6 +372,12 @@ export class Mobject {
     return this.applyPointsFunction((p) => func(p), opts);
   }
 
+  /** Copy another mobject's points (manim's match_points). VMobject also copies subpaths. */
+  matchPoints(mobject) {
+    this.setPoints(mobject.getPoints());
+    return this;
+  }
+
   applyComplexFunction(func, opts = {}) {
     return this.applyFunction((p) => {
       const w = func({ re: p[0], im: p[1] });
