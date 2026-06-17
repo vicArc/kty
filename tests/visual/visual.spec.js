@@ -36,6 +36,7 @@ const SCENES = [
   'textured',
   'boolean',
   'specialtex',
+  'drawings',
 ];
 
 for (const id of SCENES) {

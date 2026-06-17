@@ -27,6 +27,21 @@ export class ThreeRenderer extends RenderBackend {
     this.scene.background = new THREE.Color(camera.backgroundColor);
     this.threeCamera = camera.makeThreeCamera();
     this.renderer = null; // created on attach() (needs a canvas/GL context)
+    // Cache of built Object3Ds keyed by mobject, so a per-frame re-render only
+    // rebuilds geometry for mobjects whose data actually changed (the
+    // _dataHasChanged gate). Without this, static scenes re-triangulate every
+    // frame and heavy ones exhaust memory faster than GC reclaims it.
+    this._renderCache = new Map();
+  }
+
+  /** Free a built Object3D's GPU resources (geometries + materials, not shared textures). */
+  _disposeObject(obj) {
+    obj.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) {
+        for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.dispose();
+      }
+    });
   }
 
   get resolution() {
@@ -49,24 +64,37 @@ export class ThreeRenderer extends RenderBackend {
 
   /** Rebuild the scene contents from an ordered mobject list. */
   buildScene(mobjects) {
-    // Clear previous content (keep background), disposing GPU resources so the
-    // per-frame rebuild doesn't leak geometry/materials (heavy scenes would
-    // otherwise exhaust memory). Textures are cached/shared, so leave them be.
-    for (const child of [...this.scene.children]) {
-      this.scene.remove(child);
-      child.traverse((o) => {
-        if (o.geometry) o.geometry.dispose();
-        if (o.material) {
-          for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.dispose();
-        }
-      });
+    const members = assembleRenderGroups(mobjects);
+    const present = new Set(members);
+    // Drop cached objects for mobjects no longer in the scene.
+    for (const [mob, obj] of this._renderCache) {
+      if (!present.has(mob)) {
+        this.scene.remove(obj);
+        this._disposeObject(obj);
+        this._renderCache.delete(mob);
+      }
     }
+    // Lights are cheap and depend on the current frame's content; rebuild them.
+    for (const child of [...this.scene.children]) {
+      if (child.isLight) this.scene.remove(child);
+    }
+
     let order = 0;
     let needsLights = false;
-    for (const mob of assembleRenderGroups(mobjects)) {
-      const obj = this.buildMobject(mob);
+    for (const mob of members) {
+      let obj = this._renderCache.get(mob);
+      // Rebuild only when the mobject is new or its data changed since last build.
+      if (!obj || mob._dataHasChanged) {
+        if (obj) {
+          this.scene.remove(obj);
+          this._disposeObject(obj);
+        }
+        obj = this.buildMobject(mob);
+        this._renderCache.set(mob, obj);
+        this.scene.add(obj);
+        mob._dataHasChanged = false;
+      }
       obj.renderOrder = order++;
-      this.scene.add(obj);
       // Surfaces and depth-tested 3D VMobjects (VCube/Dodecahedron) use lit
       // materials; flat 2D VMobject fills ignore lights, so 2D is unaffected.
       if (mob.renderType === 'surface' || mob.depthTest) needsLights = true;
