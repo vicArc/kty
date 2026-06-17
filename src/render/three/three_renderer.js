@@ -49,8 +49,18 @@ export class ThreeRenderer extends RenderBackend {
 
   /** Rebuild the scene contents from an ordered mobject list. */
   buildScene(mobjects) {
-    // Clear previous content (keep background).
-    for (const child of [...this.scene.children]) this.scene.remove(child);
+    // Clear previous content (keep background), disposing GPU resources so the
+    // per-frame rebuild doesn't leak geometry/materials (heavy scenes would
+    // otherwise exhaust memory). Textures are cached/shared, so leave them be.
+    for (const child of [...this.scene.children]) {
+      this.scene.remove(child);
+      child.traverse((o) => {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) {
+          for (const m of Array.isArray(o.material) ? o.material : [o.material]) m.dispose();
+        }
+      });
+    }
     let order = 0;
     let needsLights = false;
     for (const mob of assembleRenderGroups(mobjects)) {
