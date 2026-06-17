@@ -41,6 +41,10 @@ const {
   Brace,
   BarChart,
   SampleSpace,
+  Union,
+  Intersection,
+  Difference,
+  Exclusion,
   TAU,
 } = kty;
 
@@ -219,6 +223,19 @@ export const SCENES = {
       strokeWidth: 4,
     });
     return { mobjects: [plane, vf] };
+  },
+  boolean: () => {
+    // Each op on two overlapping circles, laid out in a row, filled.
+    const pair = () => [
+      new Circle({ radius: 0.8 }).shift([-0.4, 0, 0]),
+      new Circle({ radius: 0.8 }).shift([0.4, 0, 0]),
+    ];
+    const style = { fillColor: '#58C4DD', fillOpacity: 1, strokeColor: '#C7E9F1', strokeWidth: 3 };
+    const u = new Union(...pair(), style).shift([-4.5, 0, 0]);
+    const i = new Intersection(...pair(), { ...style, fillColor: '#FC6255' }).shift([-1.5, 0, 0]);
+    const d = new Difference(...pair(), { ...style, fillColor: '#FFFF00' }).shift([1.5, 0, 0]);
+    const x = new Exclusion(...pair(), { ...style, fillColor: '#83C167' }).shift([4.5, 0, 0]);
+    return [u, i, d, x];
   },
   taperstroke: () => {
     // Per-vertex stroke: width ramps 0→thick along the curve, color gradient

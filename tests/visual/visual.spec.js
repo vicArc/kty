@@ -34,6 +34,7 @@ const SCENES = [
   'taperstroke',
   'vsolids',
   'textured',
+  'boolean',
 ];
 
 for (const id of SCENES) {
