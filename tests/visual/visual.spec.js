@@ -13,6 +13,7 @@ const SCENES = [
   'axes',
   'plane',
   'tex',
+  'texcolor',
   'text',
   'decimal',
   'sphere',

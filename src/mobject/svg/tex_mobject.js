@@ -65,27 +65,68 @@ export function latexToGlyphs(latex, displayMode = true) {
 }
 
 export class Tex extends VGroup {
-  constructor(texString, { fontSize = 48, color = WHITE, fillColor = null, ...style } = {}) {
+  constructor(
+    texString,
+    { fontSize = 48, color = WHITE, fillColor = null, texToColorMap = null, ...style } = {}
+  ) {
     super();
     this.texString = texString;
     const glyphs = latexToGlyphs(texString, true);
     for (const g of glyphs) {
-      this.add(
-        new VMobjectFromSVGPath({
-          d: g.d,
-          transform: g.transform,
-          fillColor: fillColor ?? color,
-          fillOpacity: 1.0,
-          strokeWidth: 0.0,
-          ...style,
-        })
-      );
+      const glyph = new VMobjectFromSVGPath({
+        d: g.d,
+        transform: g.transform,
+        fillColor: fillColor ?? color,
+        fillOpacity: 1.0,
+        strokeWidth: 0.0,
+        ...style,
+      });
+      glyph._svgPathD = g.d; // remember the font glyph for substring matching
+      this.add(glyph);
     }
     // MathJax path units are ~1000/em with y already flipped up by its inner
     // scale(1,-1); bring to manim world units and center on the origin.
     const scale = (fontSize / 48) * 0.0014;
     if (this.hasPoints() || this.submobjects.length) this.scale(scale);
     this.center();
+
+    if (texToColorMap) this.setColorByTexToColorMap(texToColorMap);
+  }
+
+  /**
+   * Every contiguous run of glyphs matching `substring` (as VGroups). Matching
+   * is by font-glyph path: `substring` is re-rendered and its glyph sequence is
+   * found within this Tex — robust for symbols and simple sub-expressions.
+   */
+  getParts(substring) {
+    const subDs = latexToGlyphs(substring, true).map((g) => g.d);
+    const fullDs = this.submobjects.map((m) => m._svgPathD);
+    const n = subDs.length;
+    const out = [];
+    if (n === 0) return out;
+    for (let i = 0; i + n <= fullDs.length; i++) {
+      if (subDs.every((d, j) => d === fullDs[i + j])) {
+        out.push(new VGroup(...this.submobjects.slice(i, i + n)));
+      }
+    }
+    return out;
+  }
+
+  /** The `index`-th occurrence of `substring` as a glyph VGroup (or null). */
+  getPart(substring, index = 0) {
+    return this.getParts(substring)[index] ?? null;
+  }
+
+  /** Color every occurrence of `substring`. */
+  setColorByTex(substring, color) {
+    for (const part of this.getParts(substring)) part.setColor(color);
+    return this;
+  }
+
+  /** Color substrings from a `{ substring: color }` map. */
+  setColorByTexToColorMap(map) {
+    for (const [substring, color] of Object.entries(map)) this.setColorByTex(substring, color);
+    return this;
   }
 }
 
