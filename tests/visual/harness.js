@@ -30,6 +30,7 @@ const {
   Disk3D,
   VCube,
   Dodecahedron,
+  TexturedSurface,
   SurfaceMesh,
   DotCloud,
   GlowDots,
@@ -131,6 +132,24 @@ export const SCENES = {
     ],
     reorient: [-25, 70],
   }),
+  textured: () => {
+    // A checkerboard + colored-quadrant canvas mapped onto a sphere.
+    const cv = document.createElement('canvas');
+    cv.width = 256;
+    cv.height = 128;
+    const ctx = cv.getContext('2d');
+    const cols = ['#58C4DD', '#FC6255', '#FFFF00', '#83C167'];
+    for (let i = 0; i < 16; i++) {
+      for (let j = 0; j < 8; j++) {
+        ctx.fillStyle =
+          (i + j) % 2 ? '#222222' : cols[(Math.floor(i / 4) + 2 * Math.floor(j / 4)) % 4];
+        ctx.fillRect(i * 16, j * 16, 16, 16);
+      }
+    }
+    const sphere = new Sphere({ radius: 2, resolution: [48, 24] });
+    const tex = new TexturedSurface(sphere, cv);
+    return { mobjects: [tex], reorient: [-25, 70] };
+  },
   surfacemesh: () => {
     // Lower-res torus + fewer mesh lines so the frame settles under CI's GL.
     const torus = new Torus({ r1: 2, r2: 0.8, resolution: [48, 24], color: '#2A4858' });

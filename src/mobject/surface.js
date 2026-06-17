@@ -165,3 +165,49 @@ export class ParametricSurface extends Surface {
     super({ ...opts, uvFunc });
   }
 }
+
+/**
+ * A Surface that maps an image onto its uv-grid — port of manim's
+ * TexturedSurface. Takes another Surface for geometry and an image source
+ * (URL / HTMLImageElement / HTMLCanvasElement); the renderer samples the image
+ * by per-vertex texture coords. `darkImageSrc` is accepted for API parity but
+ * the single light texture is rendered (day/night blend needs a custom shader).
+ */
+export class TexturedSurface extends Surface {
+  constructor(uvSurface, imageSrc, { darkImageSrc = null, ...rest } = {}) {
+    if (!(uvSurface instanceof Surface)) throw new Error('uvSurface must be a Surface');
+    super({
+      ...rest,
+      color: '#FFFFFF', // texture supplies color
+      uRange: uvSurface.uRange,
+      vRange: uvSurface.vRange,
+      resolution: uvSurface.resolution,
+      uvFunc: (u, v) => uvSurface._evalUV(u, v),
+    });
+    this.uvSurface = uvSurface;
+    this.imageSrc = imageSrc;
+    this.darkImageSrc = darkImageSrc || imageSrc;
+    this.setImageCoordsByUvFunc((u, v) => [u, v]);
+  }
+
+  /**
+   * Set per-vertex texture coordinates from a uv → uv' map. The v axis is
+   * reversed (image y points down) to match manim's reading order.
+   */
+  setImageCoordsByUvFunc(uvFunc) {
+    const [nu, nv] = this.resolution;
+    const im = new Float32Array(nu * nv * 2);
+    let k = 0;
+    for (let i = 0; i < nu; i++) {
+      const u = nu > 1 ? i / (nu - 1) : 0;
+      for (let j = 0; j < nv; j++) {
+        const v = nv > 1 ? 1 - j / (nv - 1) : 1; // reverse y-direction
+        const [up, vp] = uvFunc(u, v);
+        im[k++] = up;
+        im[k++] = vp;
+      }
+    }
+    this.imCoords = im;
+    return this;
+  }
+}
