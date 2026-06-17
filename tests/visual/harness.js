@@ -47,6 +47,10 @@ const {
   Exclusion,
   BulletedList,
   Title,
+  Checkmark,
+  Exmark,
+  Clock,
+  DieFace,
   TAU,
 } = kty;
 
@@ -225,6 +229,19 @@ export const SCENES = {
       strokeWidth: 4,
     });
     return { mobjects: [plane, vf] };
+  },
+  drawings: () => {
+    // Dartboard is intentionally not in this golden: its ~60 thin transparent
+    // sector fills, triangulated on the first frame alongside MathJax's large
+    // init footprint, spike memory past this software-GL harness's headroom.
+    // It renders fine in normal apps (and is covered by unit tests).
+    const check = new Checkmark().scale(1.8).shift([-4.5, 1.3, 0]);
+    const ex = new Exmark().scale(1.8).shift([-4.5, -1.3, 0]);
+    const clock = new Clock().scale(1.6).shift([-1.6, 0, 0]);
+    const dice = new VGroup(
+      ...[1, 3, 5].map((v, i) => new DieFace(v).scale(1.2).shift([1.6 + i * 1.6, 0, 0]))
+    );
+    return [check, ex, clock, dice];
   },
   specialtex: () => {
     const title = new Title('Key Results', { color: '#FFFFFF' });

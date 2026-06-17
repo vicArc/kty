@@ -92,6 +92,55 @@ export class Ellipse extends Circle {
   }
 }
 
+/** A ring segment between two radii — the wedge of an annulus. */
+export class AnnularSector extends VMobject {
+  constructor({
+    angle = TAU / 4,
+    startAngle = 0.0,
+    innerRadius = 1.0,
+    outerRadius = 2.0,
+    arcCenter = ORIGIN,
+    fillOpacity = 1.0,
+    strokeWidth = 0.0,
+    ...style
+  } = {}) {
+    super({ fillOpacity, strokeWidth, ...style });
+    const outerPts = new Arc({ startAngle, angle, radius: outerRadius, arcCenter }).getPoints();
+    // Build one continuous closed contour. A single subpath triangulates
+    // cleanly; two disjoint subpaths would overlap and blow up the fill.
+    // For inner radius ~0 use the centre as a single apex (a pie wedge) rather
+    // than a reversed arc of coincident points — the latter is near-degenerate
+    // and makes earcut blow up, especially for thin (few-point) sectors.
+    if (innerRadius < 1e-6) {
+      this.startNewPath([...arcCenter]);
+    } else {
+      const innerPts = [
+        ...new Arc({ startAngle, angle, radius: innerRadius, arcCenter }).getPoints(),
+      ].reverse();
+      this.setPoints(innerPts);
+    }
+    this.addLineTo(outerPts[0]);
+    for (let i = 0; i + 2 < outerPts.length; i += 2) {
+      this.addQuadraticBezierCurveTo(outerPts[i + 1], outerPts[i + 2]);
+    }
+    this.addLineTo(this.getPoints()[0]); // close back to the start
+  }
+}
+
+/** A filled pie wedge (an annular sector with zero inner radius). */
+export class Sector extends AnnularSector {
+  constructor({ angle = TAU / 4, radius = 1.0, ...style } = {}) {
+    super({ angle, innerRadius: 0, outerRadius: radius, ...style });
+  }
+}
+
+/** A filled ring between two radii. */
+export class Annulus extends AnnularSector {
+  constructor({ innerRadius = 1.0, outerRadius = 2.0, ...style } = {}) {
+    super({ angle: TAU, startAngle: 0, innerRadius, outerRadius, ...style });
+  }
+}
+
 export class Dot extends Circle {
   constructor({
     point = ORIGIN,
