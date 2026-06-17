@@ -34,6 +34,7 @@ export * from './mobject/functions.js';
 export * from './mobject/coordinate_systems.js';
 export * from './mobject/matrix.js';
 export * from './mobject/changing.js';
+export * from './mobject/probability.js';
 
 // 3D surfaces & meshes (Stage 6: S6.4)
 export * from './mobject/surface.js';

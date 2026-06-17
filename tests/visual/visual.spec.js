@@ -29,6 +29,8 @@ const SCENES = [
   'matrix',
   'brace',
   'smoothing',
+  'barchart',
+  'samplespace',
 ];
 
 for (const id of SCENES) {

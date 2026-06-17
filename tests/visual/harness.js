@@ -36,6 +36,8 @@ const {
   StreamLines,
   Matrix,
   Brace,
+  BarChart,
+  SampleSpace,
   TAU,
 } = kty;
 
@@ -222,6 +224,24 @@ export const SCENES = {
     ).scale(1.3);
     m.setColumnColors('#58C4DD', '#FC6255', '#83C167');
     return { mobjects: [m] };
+  },
+  barchart: () => {
+    const chart = new BarChart({
+      values: [0.3, 0.7, 0.5, 0.9, 0.4],
+      maxValue: 1,
+      width: 6,
+      height: 3.4,
+      barNames: ['a', 'b', 'c', 'd', 'e'],
+      barColors: ['#58C4DD', '#FC6255'],
+    }).scale(1.1);
+    return { mobjects: [chart] };
+  },
+  samplespace: () => {
+    const ss = new SampleSpace({ width: 3.4, height: 3.4 });
+    ss.divideHorizontally([0.5]);
+    ss.horizontalParts.submobjects[0].divideVertically([0.3]);
+    ss.horizontalParts.submobjects[1].divideVertically([0.6]);
+    return { mobjects: [ss] };
   },
   streamlines: () => {
     // Light (≈28 lines × 35 steps, no background grid) so the frame renders fast
