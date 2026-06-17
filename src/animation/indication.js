@@ -1,6 +1,7 @@
 // Indication animations — port of manimlib/animation/indication.py. Draws the
-// viewer's eye to a mobject (or point). Animations needing per-vertex stroke
-// width (VShowPassingFlash/FlashAround) are deferred.
+// viewer's eye to a mobject (or point). FlashAround/FlashUnder use a passing
+// flash on a surrounding rectangle/underline; manim's gaussian-taper
+// VShowPassingFlash needs per-vertex stroke width and is deferred.
 
 import { Animation } from './animation.js';
 import { Transform } from './transform.js';
@@ -9,6 +10,7 @@ import { ShowPartial, ShowCreation } from './creation.js';
 import { FadeOut } from './fading.js';
 import { Homotopy } from './movement.js';
 import { Circle, Dot, Line } from '../mobject/geometry.js';
+import { SurroundingRectangle, Underline } from '../mobject/shape_matchers.js';
 import { VMobject, VGroup } from '../mobject/vmobject.js';
 import { interpolate } from '../foundation/bezier.js';
 import { thereAndBack, wiggle } from '../foundation/rate_functions.js';
@@ -220,5 +222,42 @@ export class TurnInsideOut extends Transform {
     const target = this.mobject.copy();
     for (const sm of target.getFamily()) if (sm.reversePoints) sm.reversePoints();
     return target;
+  }
+}
+
+/** A flash travelling around a mobject's surrounding rectangle. */
+export class FlashAround extends ShowPassingFlash {
+  constructor(
+    mobject,
+    { buff = SMALL_BUFF, color = YELLOW, strokeWidth = 4, timeWidth = 1.0, ...opts } = {}
+  ) {
+    super(new SurroundingRectangle(mobject, { buff, color, strokeWidth }), { timeWidth, ...opts });
+  }
+}
+
+/** A flash travelling along an underline beneath a mobject. */
+export class FlashUnder extends ShowPassingFlash {
+  constructor(
+    mobject,
+    { buff = SMALL_BUFF, color = YELLOW, strokeWidth = 4, timeWidth = 1.0, ...opts } = {}
+  ) {
+    super(new Underline(mobject, { buff, strokeColor: color, strokeWidth }), {
+      timeWidth,
+      ...opts,
+    });
+  }
+}
+
+/** Draw, then erase, a rectangle around a mobject. */
+export class ShowCreationThenDestructionAround extends ShowCreationThenDestruction {
+  constructor(mobject, { buff = SMALL_BUFF, color = YELLOW, strokeWidth = 2, ...opts } = {}) {
+    super(new SurroundingRectangle(mobject, { buff, color, strokeWidth }), opts);
+  }
+}
+
+/** Draw a rectangle around a mobject, then fade it out. */
+export class ShowCreationThenFadeAround extends ShowCreationThenFadeOut {
+  constructor(mobject, { buff = SMALL_BUFF, color = YELLOW, strokeWidth = 2, ...opts } = {}) {
+    super(new SurroundingRectangle(mobject, { buff, color, strokeWidth }), opts);
   }
 }
