@@ -28,6 +28,7 @@ const {
   Cone,
   Line3D,
   Disk3D,
+  SurfaceMesh,
   DotCloud,
   GlowDots,
   ImageMobject,
@@ -111,6 +112,15 @@ export const SCENES = {
     mobjects: [new Cube({ sideLength: 2.4, color: '#83C167' })],
     reorient: [-40, 75],
   }),
+  surfacemesh: () => {
+    const torus = new Torus({ r1: 2, r2: 0.8, color: '#2A4858' });
+    const mesh = new SurfaceMesh(torus, {
+      resolution: [24, 12],
+      strokeColor: '#7AD151',
+      strokeWidth: 1.5,
+    });
+    return { mobjects: [torus, mesh], reorient: [-30, 70] };
+  },
   solids3d: () => ({
     mobjects: [
       new Cylinder({ radius: 0.8, height: 2.2, color: '#58C4DD' }).shift([-3.2, 0, 0]),

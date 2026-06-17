@@ -19,6 +19,7 @@ const SCENES = [
   'torus',
   'cube',
   'solids3d',
+  'surfacemesh',
   'dots',
   'glow',
   'image',
