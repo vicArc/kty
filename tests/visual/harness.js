@@ -91,6 +91,12 @@ export const SCENES = {
   },
   plane: () => [new NumberPlane({ xRange: [-5, 5, 1], yRange: [-3, 3, 1] })],
   tex: () => [new Tex('e^{i\\pi} + 1 = 0', { color: '#FFFFFF' }).scale(1.5)],
+  texcolor: () => [
+    new Tex('x^2 + 2xy + y^2', {
+      color: '#FFFFFF',
+      texToColorMap: { x: '#FC6255', y: '#58C4DD' },
+    }).scale(1.4),
+  ],
   text: () => [new Text('kty', { color: '#58C4DD' }).scale(1.6)],
   decimal: () => {
     const label = new Tex('x =', { color: '#888888' }).scale(1.6).shift([-1.5, 0, 0]);
