@@ -6,6 +6,18 @@
 >
 > **Adaptation principle:** wherever manim builds geometry by hand on the GPU, **adapt the Mobject onto a native Three.js object instead** (`Line2`/`LineMaterial`, `THREE.Shape`/`ShapeGeometry`, `SVGLoader`, `ParametricGeometry`, `Points`, `QuadraticBezierCurve3`). We reimplement manim's custom shaders only where native Three.js can't reach the required fidelity.
 
+## Using kty (library docs)
+
+If you just want to **use** the library, start here:
+
+- **[Migration guide](./migration-guide.md)** — porting manim (Python) scenes to kty.
+- **[API reference](./api-reference.md)** — the public API, grouped by area.
+
+The numbered documents below are the internal **migration plan** (how the port
+was designed and built).
+
+---
+
 This `docs/` folder is the **migration plan**. Read the documents in order.
 
 | #   | Document                                                 | What it covers                                                    |
