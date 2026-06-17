@@ -28,6 +28,7 @@ export * from './mobject/vmobject.js';
 // 2D geometry (Stage 4)
 export * from './mobject/geometry.js';
 export * from './mobject/shape_matchers.js';
+export * from './mobject/frame.js';
 
 // Coordinates & functions (Stage 6)
 export * from './mobject/functions.js';
@@ -68,6 +69,7 @@ export * from './animation/fading.js';
 export * from './animation/composition.js';
 export * from './animation/rotation.js';
 export * from './animation/update.js';
+export * from './animation/specialized.js';
 export * from './scene/scene.js';
 
 export * from './camera/camera_frame.js';
