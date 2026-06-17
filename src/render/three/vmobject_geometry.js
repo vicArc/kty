@@ -109,6 +109,75 @@ export function vmobjectToPolylines(vm, samplesPerCurve = 16) {
   return lines;
 }
 
+/** Each subpath sampled as a closed 3D polygon loop (anchors + bezier samples). */
+function vmobjectTo3DLoops(vm, samplesPerCurve = 8) {
+  const loops = [];
+  for (const sub of vm.getSubpaths()) {
+    const loop = [[sub[0][0], sub[0][1], sub[0][2] ?? 0]];
+    for (let i = 0; i + 2 < sub.length; i += 2) {
+      const a0 = sub[i];
+      const h = sub[i + 1];
+      const a1 = sub[i + 2];
+      for (let s = 1; s <= samplesPerCurve; s++) {
+        const t = s / samplesPerCurve;
+        const u = 1 - t;
+        loop.push([
+          u * u * a0[0] + 2 * u * t * h[0] + t * t * a1[0],
+          u * u * a0[1] + 2 * u * t * h[1] + t * t * a1[1],
+          u * u * (a0[2] ?? 0) + 2 * u * t * (h[2] ?? 0) + t * t * (a1[2] ?? 0),
+        ]);
+      }
+    }
+    loops.push(loop);
+  }
+  return loops;
+}
+
+/**
+ * Lit, depth-tested fill mesh for a 3D VMobject (VCube/Dodecahedron faces).
+ * Triangulates each planar, convex face as a centroid fan using true 3D
+ * positions, so faces keep their orientation and occlude one another by depth
+ * (unlike the flat xy ShapeGeometry path). Opaque faces write depth.
+ */
+export function build3DFillMesh(vm) {
+  if (vm.getFillOpacity() <= 0) return null;
+  const loops = vmobjectTo3DLoops(vm);
+  const positions = [];
+  for (const loop of loops) {
+    // Drop a trailing point coincident with the first (closed loop).
+    const pts = loop.slice();
+    const f = pts[0];
+    const l = pts[pts.length - 1];
+    if (Math.hypot(f[0] - l[0], f[1] - l[1], f[2] - l[2]) < 1e-6) pts.pop();
+    if (pts.length < 3) continue;
+    const c = [0, 0, 0];
+    for (const p of pts) for (let d = 0; d < 3; d++) c[d] += p[d] / pts.length;
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i];
+      const b = pts[(i + 1) % pts.length];
+      positions.push(c[0], c[1], c[2], a[0], a[1], a[2], b[0], b[1], b[2]);
+    }
+  }
+  if (positions.length === 0) return null;
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+  const opaque = vm.getFillOpacity() >= 1;
+  const material = new THREE.MeshStandardMaterial({
+    color: hexToThree(vm.getFillColor()),
+    side: THREE.DoubleSide,
+    transparent: !opaque,
+    opacity: vm.getFillOpacity(),
+    roughness: 0.75,
+    metalness: 0.0,
+    depthTest: true,
+    depthWrite: opaque,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.renderOrder = vm.zIndex;
+  return mesh;
+}
+
 /** Filled mesh, or null if the VMobject has no fill. */
 export function buildFillMesh(vm) {
   if (vm.getFillOpacity() <= 0) return null;
@@ -258,10 +327,22 @@ export function buildStrokeLines(vm, resolution = [1920, 1080]) {
 export function buildVMobjectObject3D(vm, resolution = [1920, 1080]) {
   const group = new THREE.Group();
   group.userData.mobject = vm;
-  const fill = buildFillMesh(vm);
+  // Depth-tested mobjects (3D solids) need a lit, true-3D fill that occludes by
+  // z; 2D mobjects keep the flat ShapeGeometry painter's-order fill.
+  const fill = vm.depthTest ? build3DFillMesh(vm) : buildFillMesh(vm);
   if (fill) group.add(fill);
   const stroke = buildStrokeLines(vm, resolution);
-  if (stroke) group.add(stroke);
+  if (stroke) {
+    if (vm.depthTest) {
+      stroke.traverse((o) => {
+        if (o.material) {
+          o.material.depthTest = true;
+          o.material.depthWrite = true;
+        }
+      });
+    }
+    group.add(stroke);
+  }
   group.renderOrder = vm.zIndex;
   return group;
 }

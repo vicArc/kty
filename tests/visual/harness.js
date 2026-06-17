@@ -28,6 +28,8 @@ const {
   Cone,
   Line3D,
   Disk3D,
+  VCube,
+  Dodecahedron,
   SurfaceMesh,
   DotCloud,
   GlowDots,
@@ -119,6 +121,15 @@ export const SCENES = {
   cube: () => ({
     mobjects: [new Cube({ sideLength: 2.4, color: '#83C167' })],
     reorient: [-40, 75],
+  }),
+  vsolids: () => ({
+    mobjects: [
+      new VCube({ sideLength: 2.2, fillColor: '#3D7EAA', fillOpacity: 1 }).shift([-2.2, 0, 0]),
+      new Dodecahedron({ fillColor: '#2C5F8A', fillOpacity: 1, strokeColor: '#8FB8DE' })
+        .scale(1.25)
+        .shift([2, 0, 0]),
+    ],
+    reorient: [-25, 70],
   }),
   surfacemesh: () => {
     // Lower-res torus + fewer mesh lines so the frame settles under CI's GL.

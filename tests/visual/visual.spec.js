@@ -32,6 +32,7 @@ const SCENES = [
   'barchart',
   'samplespace',
   'taperstroke',
+  'vsolids',
 ];
 
 for (const id of SCENES) {
