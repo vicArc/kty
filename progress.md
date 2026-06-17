@@ -163,10 +163,10 @@ _Re-scoped: frame/image/SVG export + embeddability are core kty; heavy video/aud
 
 ## Stage 10 — Parity, docs, release (the "real library" stage)
 
-| ID    | Task                                             | Status | Notes                                                                                                                            |
-| ----- | ------------------------------------------------ | ------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| S10.1 | long-tail mobjects / once_useful_constructs      | ⬜     | a library is judged by what it can draw                                                                                          |
-| S10.2 | parity suite over example_scenes.py + scoreboard | ⬜     | dev tooling (not shipped)                                                                                                        |
-| S10.3 | API docs + manim→kty migration guide + examples  | ⬜     | **highest-priority adoption lever**                                                                                              |
-| S10.4 | perf budget pass (60fps target)                  | ⬜     | + bundle-size budget                                                                                                             |
-| S10.5 | versioned release + npm + demo site              | 🟡     | `@viesar/kty@0.1.3` live on public npm; docs/demo site live (test.kty.victorarce.com). Remaining: 1.0 parity + versioning policy |
+| ID    | Task                                             | Status | Notes                                                                                                                                                                                                                   |
+| ----- | ------------------------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S10.1 | long-tail mobjects / once_useful_constructs      | ✅     | BarChart/SampleSpace, per-vertex stroke, VCube/Dodecahedron/Prismify, TexturedSurface, frame + Broadcast, boolean ops, special_tex, drawings (+AnnularSector/Sector/Annulus). Out of scope: SVG-asset props & editor UI |
+| S10.2 | parity suite over example_scenes.py + scoreboard | ⬜     | dev tooling (not shipped)                                                                                                                                                                                               |
+| S10.3 | API docs + manim→kty migration guide + examples  | 🟡     | migration guide + curated API reference in `docs/` (linked from README), + showcase link. Remaining: examples gallery + official-docs section in kty-doc                                                                |
+| S10.4 | perf budget pass (60fps target)                  | ⬜     | + bundle-size budget                                                                                                                                                                                                    |
+| S10.5 | versioned release + npm + demo site              | 🟡     | `@viesar/kty@0.1.3` live on public npm; docs/demo site live (test.kty.victorarce.com). Remaining: 1.0 parity + versioning policy                                                                                        |
