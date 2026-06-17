@@ -136,8 +136,9 @@ new Square({ fillColor: BLUE, fillOpacity: 1 });
 new Dot({ fillColor: '#FFFF00' });
 ```
 
-> **Note:** kty ships the base palette names but not every manim shade suffix
-> (e.g. `BLUE_E`, `GREY_B`). Use an explicit hex for those.
+> **Note:** the base palette names (`BLUE`, `RED`, …) are top-level exports. The
+> full manim shade scale lives on the `COLORS` object —
+> `COLORS.BLUE_E`, `COLORS.GREY_B`, etc. (`import { COLORS } from '@viesar/kty'`).
 
 ---
 
@@ -308,6 +309,10 @@ await scene.play(
 );
 ```
 
-> manim's `mob.animate.shift(...)` syntactic sugar has no direct kty equivalent —
-> mutate the mobject and `play` an explicit animation, or apply the change
-> between plays (as above).
+> kty mirrors manim's `mob.animate.…` sugar with a builder that ends in
+> `.build()`:
+>
+> ```js
+> const anim = sq.animate.shift([2, 0, 0]).rotate(Math.PI).scale(0.5).build();
+> await scene.play(anim);
+> ```
