@@ -52,16 +52,16 @@ export class ThreeRenderer extends RenderBackend {
     // Clear previous content (keep background).
     for (const child of [...this.scene.children]) this.scene.remove(child);
     let order = 0;
-    let hasSurface = false;
+    let needsLights = false;
     for (const mob of assembleRenderGroups(mobjects)) {
       const obj = this.buildMobject(mob);
       obj.renderOrder = order++;
       this.scene.add(obj);
-      if (mob.renderType === 'surface') hasSurface = true;
+      // Surfaces and depth-tested 3D VMobjects (VCube/Dodecahedron) use lit
+      // materials; flat 2D VMobject fills ignore lights, so 2D is unaffected.
+      if (mob.renderType === 'surface' || mob.depthTest) needsLights = true;
     }
-    // Lit materials (surfaces) need lights; unlit VMobject fills ignore them, so
-    // 2D scenes are unaffected. Add them only when a surface is on screen.
-    if (hasSurface) this._addLights();
+    if (needsLights) this._addLights();
     return this.scene;
   }
 

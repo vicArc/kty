@@ -37,6 +37,9 @@ export class Mobject {
     this.color = color;
     this.opacity = opacity;
     this.zIndex = zIndex;
+    // When true, the renderer depth-tests this mobject's faces (true z-buffer
+    // occlusion + lit shading) instead of 2D painter ordering — for 3D solids.
+    this.depthTest = false;
 
     this.submobjects = [];
     this.parents = [];
@@ -349,6 +352,18 @@ export class Mobject {
 
   rotateAboutOrigin(angle, axis = OUT) {
     return this.rotate(angle, axis, { aboutPoint: ORIGIN });
+  }
+
+  /** Toggle true-depth rendering (z-buffer occlusion) over the family. */
+  setDepthTest(value = true, recurse = true) {
+    for (const mob of recurse ? this.getFamily() : [this]) mob.depthTest = value;
+    return this;
+  }
+  applyDepthTest(recurse = true) {
+    return this.setDepthTest(true, recurse);
+  }
+  deactivateDepthTest(recurse = true) {
+    return this.setDepthTest(false, recurse);
   }
 
   flip(axis = UP, opts = {}) {
