@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { VERSION, FRAME_WIDTH, FRAME_HEIGHT, TAU } from '../../src/index.js';
 
 describe('scaffold smoke', () => {
-  it('exposes a version', () => {
-    expect(VERSION).toBe('0.0.0');
+  it('exposes a semver version', () => {
+    expect(VERSION).toMatch(/^\d+\.\d+\.\d+/);
   });
 
   it('derives frame geometry from an 8-unit, 16:9 world', () => {

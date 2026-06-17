@@ -4,7 +4,7 @@
 
 Published on npm as **[`@viesar/kty`](https://www.npmjs.com/package/@viesar/kty)**. Live, interactive docs: **[kty.victorarce.com](https://kty.victorarce.com)** (test: [test.kty.victorarce.com](https://test.kty.victorarce.com)).
 
-> **Status:** the library is feature-complete — geometry, text/Tex, coordinate systems, 2D/3D mobjects, vector fields, boolean ops, the full animation system, and web-native export/embedding all render in the browser. Stabilizing toward 1.0; see [`progress.md`](./progress.md) for the stage tracker and [`docs/`](./docs/README.md) for the migration plan.
+> **Status: `1.0.0` — feature-complete.** Geometry, text/Tex, coordinate systems, 2D/3D mobjects, vector fields, boolean ops, the full animation system, and web-native export/embedding all render in the browser. The API is stable and additive from here (breaking changes bump the major version). See the [`CHANGELOG`](./CHANGELOG.md), [`progress.md`](./progress.md) for the stage tracker, and [`docs/`](./docs/README.md) for the migration plan.
 
 ## Install
 
