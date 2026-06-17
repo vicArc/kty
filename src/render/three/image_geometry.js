@@ -7,7 +7,7 @@ import * as THREE from 'three';
 
 const textureCache = new Map();
 
-function getTexture(src) {
+export function getTexture(src) {
   if (textureCache.has(src)) return textureCache.get(src);
   let tex;
   if (typeof src === 'string') {

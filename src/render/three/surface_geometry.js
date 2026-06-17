@@ -6,6 +6,7 @@
 // surface is present. No WebGL context is needed to build this — only to render.
 
 import * as THREE from 'three';
+import { getTexture } from './image_geometry.js';
 
 const hexToThree = (hex) => new THREE.Color(hex);
 
@@ -20,9 +21,14 @@ export function buildSurfaceMesh(surf) {
   geometry.setAttribute('normal', new THREE.BufferAttribute(surf.getUnitNormals(), 3));
   geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(indices), 1));
 
+  // TexturedSurface carries an image source + per-vertex texture coords.
+  const textured = surf.imageSrc != null && surf.imCoords;
+  if (textured) geometry.setAttribute('uv', new THREE.BufferAttribute(surf.imCoords, 2));
+
   const opacity = surf.getOpacity();
   const material = new THREE.MeshStandardMaterial({
-    color: hexToThree(surf.getColor()),
+    color: textured ? 0xffffff : hexToThree(surf.getColor()),
+    map: textured ? getTexture(surf.imageSrc) : null,
     roughness: 0.5,
     metalness: 0.0,
     side: THREE.DoubleSide,

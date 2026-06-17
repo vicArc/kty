@@ -33,6 +33,7 @@ const SCENES = [
   'samplespace',
   'taperstroke',
   'vsolids',
+  'textured',
 ];
 
 for (const id of SCENES) {
