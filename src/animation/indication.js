@@ -1,7 +1,7 @@
 // Indication animations — port of manimlib/animation/indication.py. Draws the
 // viewer's eye to a mobject (or point). FlashAround/FlashUnder use a passing
-// flash on a surrounding rectangle/underline; manim's gaussian-taper
-// VShowPassingFlash needs per-vertex stroke width and is deferred.
+// flash on a surrounding rectangle/underline; VShowPassingFlash sweeps a
+// gaussian-tapered band of per-vertex stroke width along the path.
 
 import { Animation } from './animation.js';
 import { Transform } from './transform.js';
@@ -115,6 +115,60 @@ export class ShowPassingFlash extends ShowPartial {
     for (const [submob, start] of this.getAllFamiliesZipped()) {
       submob.pointwiseBecomePartial(start, 0, 1);
     }
+  }
+}
+
+/**
+ * Sweep a gaussian-tapered band of stroke width along a VMobject — a glowing
+ * pulse that travels the path. Unlike ShowPassingFlash (which reveals a window
+ * of the geometry), this keeps the full geometry and modulates per-vertex
+ * stroke width, so the lit band fades smoothly at both ends.
+ */
+export class VShowPassingFlash extends Animation {
+  constructor(vmobject, { timeWidth = 0.3, taperWidth = 0.02, remover = true, ...opts } = {}) {
+    super(vmobject, { remover, ...opts });
+    this.timeWidth = timeWidth;
+    this.taperWidth = taperWidth;
+  }
+
+  begin() {
+    this.flashFamily = this.mobject.familyMembersWithPoints();
+    this.originalWidths = this.flashFamily.map((sm) => Array.from(sm.data.get('stroke_width')));
+    super.begin();
+  }
+
+  // Per-vertex width = original * gaussian falloff outside the moving window.
+  applyBand(alpha) {
+    const tw = this.timeWidth;
+    const center = interpolate(-tw / 2, 1 + tw / 2, alpha); // band sweeps fully across
+    this.flashFamily.forEach((sm, idx) => {
+      const orig = this.originalWidths[idx];
+      const n = orig.length;
+      const arr = sm.data.get('stroke_width');
+      for (let i = 0; i < n; i++) {
+        const p = n > 1 ? i / (n - 1) : 0;
+        const edge = Math.max(0, Math.abs(p - center) - tw / 2);
+        arr[i] = orig[i] * Math.exp(-(edge * edge) / this.taperWidth);
+      }
+      sm.noteChangedData(false);
+    });
+  }
+
+  interpolate(alpha) {
+    this.applyBand(this.timeSpannedAlpha(alpha));
+    return this;
+  }
+
+  finish() {
+    this.mobject.setAnimatingStatus(false);
+    if (this.suspendMobjectUpdating) this.mobject.resumeUpdating();
+    // Restore the original per-vertex widths.
+    this.flashFamily.forEach((sm, idx) => {
+      const arr = sm.data.get('stroke_width');
+      for (let i = 0; i < arr.length; i++) arr[i] = this.originalWidths[idx][i];
+      sm.noteChangedData(false);
+    });
+    return this;
   }
 }
 

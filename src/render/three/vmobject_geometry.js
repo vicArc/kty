@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
+import { rgbToHex } from '../../foundation/color.js';
 
 // manim stroke_width is roughly pixels at 1080p; convert to world units so
 // Line2 (worldUnits) tracks manim's coordinate system. Tunable at the visual gate.
@@ -126,9 +127,111 @@ export function buildFillMesh(vm) {
   return mesh;
 }
 
+/**
+ * Sample a subpath (with per-point stroke width + rgba) into flat arrays of
+ * positions, per-vertex world-unit widths, and per-vertex linear-rgb colors.
+ * Width and color are interpolated linearly across each quadratic, matching the
+ * anchor → anchor blend manim applies along a stroke.
+ */
+function sampleSubpathStroke(sub, samplesPerCurve = 16) {
+  const { points, widths, rgbas } = sub;
+  const lin = (rgb) => {
+    const c = new THREE.Color(rgbToHex(rgb)); // sRGB hex → linear working space
+    return [c.r, c.g, c.b];
+  };
+  const positions = [points[0][0], points[0][1], points[0][2] ?? 0];
+  const ws = [widths[0] * STROKE_WIDTH_TO_WORLD];
+  const colors = [...lin(rgbas[0])];
+  for (let i = 0; i + 2 < points.length; i += 2) {
+    const a0 = points[i];
+    const h = points[i + 1];
+    const a1 = points[i + 2];
+    const w0 = widths[i];
+    const w1 = widths[i + 2];
+    const c0 = lin(rgbas[i]);
+    const c1 = lin(rgbas[i + 2]);
+    for (let s = 1; s <= samplesPerCurve; s++) {
+      const t = s / samplesPerCurve;
+      const u = 1 - t;
+      for (let d = 0; d < 3; d++) {
+        positions.push(u * u * a0[d] + 2 * u * t * h[d] + t * t * a1[d]);
+      }
+      ws.push((u * w0 + t * w1) * STROKE_WIDTH_TO_WORLD);
+      for (let d = 0; d < 3; d++) colors.push(u * c0[d] + t * c1[d]);
+    }
+  }
+  return { positions, widths: ws, colors };
+}
+
+// Patch LineMaterial so per-segment-end widths (instanceWidthStart/End) replace
+// the single `linewidth` uniform. Three picks start vs end per vertex by
+// position.y, so a segment becomes a trapezoid → smooth taper along the stroke.
+function applyPerVertexWidth(material) {
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        'uniform float linewidth;',
+        'uniform float linewidth;\nattribute float instanceWidthStart;\nattribute float instanceWidthEnd;'
+      )
+      .replace(
+        'float hw = linewidth * 0.5;',
+        'float hw = ( position.y < 0.5 ? instanceWidthStart : instanceWidthEnd ) * 0.5;'
+      )
+      .replace(
+        'offset *= linewidth;',
+        'offset *= ( position.y < 0.5 ? instanceWidthStart : instanceWidthEnd );'
+      );
+  };
+}
+
+// Attach per-point widths as paired instanced attributes, mirroring how
+// LineGeometry expands consecutive points into overlapping segments.
+function setLineWidths(geometry, perPointWidths) {
+  const n = perPointWidths.length;
+  const pairs = new Float32Array(2 * (n - 1));
+  for (let i = 0; i < n - 1; i++) {
+    pairs[2 * i] = perPointWidths[i];
+    pairs[2 * i + 1] = perPointWidths[i + 1];
+  }
+  const buf = new THREE.InstancedInterleavedBuffer(pairs, 2, 1);
+  geometry.setAttribute('instanceWidthStart', new THREE.InterleavedBufferAttribute(buf, 1, 0));
+  geometry.setAttribute('instanceWidthEnd', new THREE.InterleavedBufferAttribute(buf, 1, 1));
+}
+
+/** Tapered / along-stroke-gradient stroke (per-vertex width + color). */
+function buildTaperedStrokeLines(vm, resolution) {
+  const group = new THREE.Group();
+  for (const sub of vm.getSubpathsWithStroke()) {
+    const { positions, widths, colors } = sampleSubpathStroke(sub);
+    if (positions.length < 6) continue;
+    const geometry = new LineGeometry();
+    geometry.setPositions(positions);
+    geometry.setColors(colors);
+    setLineWidths(geometry, widths);
+    const material = new LineMaterial({
+      linewidth: 1, // overridden per-vertex by the shader patch
+      worldUnits: true,
+      vertexColors: true,
+      transparent: true,
+      opacity: vm.getStrokeOpacity(),
+    });
+    applyPerVertexWidth(material);
+    material.resolution.set(resolution[0], resolution[1]);
+    const line = new Line2(geometry, material);
+    line.renderOrder = vm.zIndex;
+    group.add(line);
+  }
+  return group.children.length ? group : null;
+}
+
 /** Stroke as one Line2 per subpath, grouped; or null if no stroke. */
 export function buildStrokeLines(vm, resolution = [1920, 1080]) {
-  if (vm.getStrokeWidth() <= 0 || vm.getStrokeOpacity() <= 0) return null;
+  if (vm.getStrokeOpacity() <= 0) return null;
+  // Per-vertex path only when width/color actually varies, so uniform strokes
+  // keep their exact existing rendering (and goldens stay byte-stable). Checked
+  // before the width guard since a tapered stroke's first vertex may be width 0.
+  if (vm.hasVaryingStroke()) return buildTaperedStrokeLines(vm, resolution);
+  if (vm.getStrokeWidth() <= 0) return null;
   const polylines = vmobjectToPolylines(vm);
   if (polylines.length === 0) return null;
   const group = new THREE.Group();

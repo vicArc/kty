@@ -190,6 +190,29 @@ export const SCENES = {
     });
     return { mobjects: [plane, vf] };
   },
+  taperstroke: () => {
+    // Per-vertex stroke: width ramps 0→thick along the curve, color gradient
+    // blue→red across it. Exercises the tapered/gradient render path.
+    const pts = [];
+    for (let i = 0; i <= 24; i++) {
+      const x = -5 + (10 * i) / 24;
+      pts.push([x, 1.4 * Math.sin((x * Math.PI) / 2.5), 0]);
+    }
+    const wave = new VMobject().setPointsSmoothly(pts).shift([0, 1.4, 0]);
+    wave.setStroke(['#58C4DD', '#FC6255'], [0, 14], 1);
+    // A second curve with a single mid-band of width (gaussian-ish bump).
+    const pts2 = [];
+    const widths = [];
+    for (let i = 0; i <= 24; i++) {
+      const x = -5 + (10 * i) / 24;
+      pts2.push([x, 0, 0]);
+      const d = (i - 12) / 6;
+      widths.push(12 * Math.exp(-d * d));
+    }
+    const band = new VMobject().setPointsAsCorners(pts2).shift([0, -1.6, 0]);
+    band.setStroke('#FFFF00', widths, 1);
+    return { mobjects: [wave, band] };
+  },
   smoothing: () => {
     // A smooth curve through anchors (setPointsSmoothly) + a rounded square.
     const wave = new VMobject()
