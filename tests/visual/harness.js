@@ -45,6 +45,8 @@ const {
   Intersection,
   Difference,
   Exclusion,
+  BulletedList,
+  Title,
   TAU,
 } = kty;
 
@@ -223,6 +225,15 @@ export const SCENES = {
       strokeWidth: 4,
     });
     return { mobjects: [plane, vf] };
+  },
+  specialtex: () => {
+    const title = new Title('Key Results', { color: '#FFFFFF' });
+    const list = new BulletedList('First point', 'Second point', 'Third point', {
+      color: '#C7E9F1',
+    })
+      .scale(0.9)
+      .shift([0, -0.6, 0]);
+    return [title, list];
   },
   boolean: () => {
     // Each op on two overlapping circles, laid out in a row, filled.

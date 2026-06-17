@@ -35,6 +35,7 @@ const SCENES = [
   'vsolids',
   'textured',
   'boolean',
+  'specialtex',
 ];
 
 for (const id of SCENES) {
