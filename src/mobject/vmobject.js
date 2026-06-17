@@ -487,6 +487,14 @@ export class VMobject extends Mobject {
     this.setPoints(vmobject.getPoints());
     return this;
   }
+
+  /** Reverse the traversal direction of each subpath (manim's reverse_points). */
+  reversePoints() {
+    const subs = this.getSubpaths();
+    this._resetPath();
+    for (const sub of subs) this.addSubpath([...sub].reverse());
+    return this.noteChangedData();
+  }
 }
 
 // Local copy to avoid a circular import with foundation/bezier arc helper.
