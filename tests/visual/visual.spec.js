@@ -31,6 +31,7 @@ const SCENES = [
   'smoothing',
   'barchart',
   'samplespace',
+  'taperstroke',
 ];
 
 for (const id of SCENES) {

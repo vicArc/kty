@@ -98,7 +98,17 @@ export class VMobject extends Mobject {
     for (const mob of this.getFamily(recurse)) {
       const hasPts = mob.hasPoints();
       const arr = hasPts ? mob.data.get('stroke_width') : mob.data.defaults.get('stroke_width');
-      arr.fill(width);
+      if (Array.isArray(width)) {
+        // Per-vertex widths: resize to the point count (defaults hold one row).
+        const ws = resizeWithInterpolation(
+          width.map((w) => [w]),
+          arr.length
+        );
+        for (let i = 0; i < arr.length; i++) arr[i] = ws[i][0];
+      } else {
+        arr.fill(width);
+      }
+      mob.noteChangedData(false);
     }
     return this;
   }
@@ -322,6 +332,46 @@ export class VMobject extends Mobject {
       if (b - a >= 3) subs.push(pts.slice(a, b));
     }
     return subs;
+  }
+
+  /**
+   * Subpaths paired with their per-point stroke width and rgba, used by the
+   * renderer to draw tapered / along-stroke-gradient strokes. Mirrors the
+   * slicing (and the >=3 points filter) of getSubpaths().
+   */
+  getSubpathsWithStroke() {
+    const pts = this.getPoints();
+    if (pts.length === 0) return [];
+    const widths = this.data.get('stroke_width');
+    const rgba = this.data.get('stroke_rgba');
+    const starts = this.subpathStartIndices.length ? this.subpathStartIndices : [0];
+    const subs = [];
+    for (let s = 0; s < starts.length; s++) {
+      const a = starts[s];
+      const b = s + 1 < starts.length ? starts[s + 1] : pts.length;
+      if (b - a < 3) continue;
+      const w = [];
+      const c = [];
+      for (let i = a; i < b; i++) {
+        w.push(widths[i]);
+        c.push([rgba[i * 4], rgba[i * 4 + 1], rgba[i * 4 + 2], rgba[i * 4 + 3]]);
+      }
+      subs.push({ points: pts.slice(a, b), widths: w, rgbas: c });
+    }
+    return subs;
+  }
+
+  /** True if stroke width or stroke color/opacity is not the same at every point. */
+  hasVaryingStroke() {
+    if (!this.hasPoints() || this.data.length < 2) return false;
+    const widths = this.data.get('stroke_width');
+    const rgba = this.data.get('stroke_rgba');
+    const n = this.data.length;
+    for (let i = 1; i < n; i++) {
+      if (widths[i] !== widths[0]) return true;
+      for (let k = 0; k < 4; k++) if (rgba[i * 4 + k] !== rgba[k]) return true;
+    }
+    return false;
   }
 
   /** Anchor points (every other point) across all subpaths. */

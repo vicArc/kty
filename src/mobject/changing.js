@@ -56,7 +56,7 @@ export class TracedPath extends VMobject {
   }
 }
 
-/** A short fading trail behind a mobject or point (uniform stroke; manim tapers it). */
+/** A short trail behind a mobject or point, tapering from tail (0) to head. */
 export class TracingTail extends TracedPath {
   constructor(
     mobjectOrFunc,
@@ -67,6 +67,9 @@ export class TracingTail extends TracedPath {
         ? () => mobjectOrFunc.getCenter()
         : mobjectOrFunc;
     super(func, { timeTraced, strokeColor, strokeWidth, ...rest });
+    // Per-vertex width ramps 0 → strokeWidth across the trail (oldest point
+    // first), so the tail fades to a point while the head keeps full width.
+    this.strokeConfig.width = [0, strokeWidth];
     const n = Math.max(1, Math.round(this.timeTraced / this.timePerAnchor));
     const p = this.tracedPointFunc();
     this.tracedPoints = Array.from({ length: n }, () => [...p]);
