@@ -78,6 +78,10 @@ export * from './scene/scene.js';
 
 export * from './camera/camera_frame.js';
 export * from './camera/camera.js';
+
+// Clay effects (1.0.1)
+export * from './clay/clay.js';
+
 export * from './render/render_backend.js';
 export * from './render/three/vmobject_geometry.js';
 export * from './render/three/surface_geometry.js';
