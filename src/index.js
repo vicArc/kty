@@ -72,6 +72,7 @@ export * from './animation/movement.js';
 export * from './animation/fading.js';
 export * from './animation/composition.js';
 export * from './animation/rotation.js';
+export * from './animation/clay.js';
 export * from './animation/update.js';
 export * from './animation/specialized.js';
 export * from './scene/scene.js';
