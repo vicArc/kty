@@ -37,9 +37,12 @@ const UNICODE_LATEX = {
   Ü: '\\"U',
   ç: '\\c{c}',
   Ç: '\\c{C}',
-  '¿': '\\textquestiondown{}',
-  '¡': '\\textexclamdown{}',
-  '…': '\\ldots{}',
+  // Computer Modern (MathJax) has no glyph for inverted punctuation and the
+  // textcomp/\unicode fallbacks only draw a tofu box, so drop the opening ¿ ¡
+  // (the closing ? ! still convey it). … becomes three periods.
+  '¿': '',
+  '¡': '',
+  '…': '...',
 };
 
 export function escapeLatex(s) {

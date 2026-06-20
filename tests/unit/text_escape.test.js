@@ -2,12 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { escapeLatex, Text } from '../../src/mobject/svg/text_mobject.js';
 
 describe('escapeLatex', () => {
-  it('maps accented / Spanish characters to LaTeX macros', () => {
+  it('maps accents to macros, drops inverted punctuation, … to periods', () => {
     expect(escapeLatex('intercámbialos')).toBe("interc\\'ambialos");
-    expect(escapeLatex('¿Sí?')).toBe("\\textquestiondown{}S\\'i?");
-    expect(escapeLatex('¡Ordenado!')).toBe('\\textexclamdown{}Ordenado!');
+    expect(escapeLatex('Sí')).toBe("S\\'i");
     expect(escapeLatex('señor')).toBe('se\\~nor');
-    expect(escapeLatex('Inicio…')).toBe('Inicio\\ldots{}');
+    expect(escapeLatex('Inicio…')).toBe('Inicio...');
+    // ¿ ¡ have no CM glyph — dropped (closing ? ! remain).
+    expect(escapeLatex('¡Sí!')).toBe("S\\'i!");
+    expect(escapeLatex('¿Sí?')).toBe("S\\'i?");
   });
 
   it('still escapes TeX-special characters', () => {

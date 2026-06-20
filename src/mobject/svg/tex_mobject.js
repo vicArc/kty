@@ -8,6 +8,10 @@ import { TeX } from 'mathjax-full/js/input/tex.js';
 import { SVG } from 'mathjax-full/js/output/svg.js';
 import { liteAdaptor } from 'mathjax-full/js/adaptors/liteAdaptor.js';
 import { RegisterHTMLHandler } from 'mathjax-full/js/handlers/html.js';
+// Registers the 'textmacros' package so \text{...} understands LaTeX text
+// accents (\'a, \~n, \"u, …) — needed for accented / Spanish prose, which
+// Computer Modern lacks as precomposed glyphs.
+import 'mathjax-full/js/input/tex/textmacros/TextMacrosConfiguration.js';
 
 import { VGroup } from '../vmobject.js';
 import { VMobjectFromSVGPath, composeAffine, IDENTITY_AFFINE } from './svg_mobject.js';
@@ -19,7 +23,9 @@ function mathjaxDoc() {
   if (_doc) return { doc: _doc, adaptor: _adaptor };
   _adaptor = liteAdaptor();
   RegisterHTMLHandler(_adaptor);
-  const input = new TeX({ packages: ['base', 'ams', 'newcommand', 'configmacros'] });
+  const input = new TeX({
+    packages: ['base', 'ams', 'newcommand', 'configmacros', 'textmacros'],
+  });
   const output = new SVG({ fontCache: 'none' });
   _doc = mathjax.document('', { InputJax: input, OutputJax: output });
   return { doc: _doc, adaptor: _adaptor };
