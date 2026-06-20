@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ClayBall, CLAY_COLORS, clayShow, clayDissolve } from '../../src/clay/clay.js';
-import { ClayMorph, ClayIn, ClayOut } from '../../src/animation/clay.js';
+import { ClayMorph, ClayIn, ClayOut, ClayPop, ClayPopOut } from '../../src/animation/clay.js';
 import { Square } from '../../src/mobject/geometry.js';
 
 describe('ClayBall', () => {
@@ -55,6 +55,44 @@ describe('ClayMorph (claymation)', () => {
     m.finish();
     expect(target.getFillOpacity()).toBeLessThan(0.1);
     expect(target.getStrokeOpacity()).toBeLessThan(0.1);
+  });
+});
+
+describe('ClayPop (whole-object clay pop)', () => {
+  it('defaults to a 0.3s overshoot pop and ends at full size', () => {
+    const sq = new Square({ sideLength: 2 });
+    const w0 = sq.getWidth();
+    const m = new ClayPop(sq);
+    expect(m.runTime).toBeCloseTo(0.3, 5);
+    m.begin();
+    expect(sq.getWidth()).toBeLessThan(w0 * 0.5); // collapsed at the start
+    for (const a of [0.25, 0.5, 0.75]) expect(() => m.interpolate(a)).not.toThrow();
+    m.finish();
+    expect(sq.getWidth()).toBeCloseTo(w0, 2); // settled back to full size
+  });
+
+  it('overshoots past full size mid-pop', () => {
+    const sq = new Square({ sideLength: 2 });
+    const full = sq.getWidth();
+    const m = new ClayPop(sq);
+    m.begin();
+    let peak = 0;
+    for (let a = 0; a <= 1.0001; a += 0.05) {
+      m.interpolate(Math.min(a, 1));
+      peak = Math.max(peak, sq.getWidth());
+    }
+    expect(peak).toBeGreaterThan(full); // sprung past 100% before settling
+  });
+});
+
+describe('ClayPopOut', () => {
+  it('shrinks and fades the mobject away', () => {
+    const sq = new Square({ sideLength: 2, fillColor: '#b06a3c', fillOpacity: 1 });
+    const m = new ClayPopOut(sq);
+    m.begin();
+    m.interpolate(1);
+    m.finish();
+    expect(sq.getFillOpacity()).toBeLessThan(0.1);
   });
 });
 

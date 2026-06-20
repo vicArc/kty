@@ -18,7 +18,7 @@ import { Transform } from './transform.js';
 import { FadeOut } from './fading.js';
 import { ClayBall, CLAY_COLORS } from '../clay/clay.js';
 import { PI } from '../foundation/constants.js';
-import { linear } from '../foundation/rate_functions.js';
+import { linear, overshoot } from '../foundation/rate_functions.js';
 import { clip } from '../foundation/simple_functions.js';
 
 export class ClayMorph extends Animation {
@@ -123,6 +123,36 @@ export class ClayMorph extends Animation {
       }
     }
     return this;
+  }
+}
+
+// A "clay pop": the mobject springs into existence from a point with a
+// squash-and-stretch overshoot (it scales past full size, then settles) — the
+// bouncy, sculpted feel of claymation, on CLEAN glyphs (no point morph). Built
+// on Transform with an `overshoot` rate function. Reusable for any mobject.
+export class ClayPop extends Transform {
+  constructor(mobject, { runTime = 0.3, pull = 1.6, fromScale = 0.001, ...opts } = {}) {
+    super(mobject, null, { runTime, rateFunc: (t) => overshoot(t, pull), ...opts });
+    this._fromScale = fromScale;
+  }
+
+  createTarget() {
+    return this.mobject.copy();
+  }
+
+  createStartingMobject() {
+    const start = this.mobject.copy();
+    const c = this.mobject.getCenter();
+    start.scale(this._fromScale, { aboutPoint: c });
+    start.moveTo(c);
+    return start;
+  }
+}
+
+// The reverse: the mobject shrinks and fades away (a quick clay "unpop").
+export class ClayPopOut extends FadeOut {
+  constructor(mobject, { runTime = 0.3, scale = 0.2, ...opts } = {}) {
+    super(mobject, { runTime, scale, ...opts });
   }
 }
 
