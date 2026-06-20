@@ -3,6 +3,7 @@ import {
   ClayBall,
   ClayBall3D,
   ClayStretch,
+  ClaySmash,
   CLAY_COLORS,
   clayShow,
   clayDissolve,
@@ -127,6 +128,30 @@ describe('ClayStretch (modeling-clay vector)', () => {
     expect(() => cs.at(-1)).not.toThrow();
     expect(() => cs.at(2)).not.toThrow();
     expect(new ClayBall3D({ color: '#ff00aa' })).toBeTruthy();
+  });
+});
+
+describe('ClaySmash (living clay ball)', () => {
+  it('2D: returns a centred, filled shape at every phase of the cycle', () => {
+    const s = new ClaySmash({ color: '#b06a3c' });
+    for (const t of [0, 0.2, 0.4, 0.6, 0.79]) {
+      const m = s.at(t);
+      expect(m.hasPoints()).toBe(true);
+      expect(m.getCenter().map((n) => +n.toFixed(2))).toEqual([0, 0, 0]);
+    }
+  });
+
+  it('3D: cycles sphere → cube → dodecahedron → sphere (different solids)', () => {
+    const s = new ClaySmash({ threeD: true });
+    const fam = (t) => s.at(t).getFamily().length;
+    expect(fam(0.0)).toBe(1); // sphere (one Surface)
+    expect(fam(0.2)).toBeGreaterThan(1); // cube (faces)
+    expect(fam(0.5)).toBeGreaterThan(fam(0.2)); // dodecahedron (more faces)
+    expect(fam(0.79)).toBe(1); // back to sphere
+  });
+
+  it('accepts any colour and a custom cycle time', () => {
+    expect(() => new ClaySmash({ color: '#ff00aa', cycle: 1.2 }).at(3.3)).not.toThrow();
   });
 });
 
