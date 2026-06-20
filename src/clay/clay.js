@@ -8,9 +8,10 @@
 // reliably in the 2D ortho scenes the articles use. The build/dissolve helpers
 // are plain VMobject animations, so they compose with Scene.play.
 
-import { Circle, Arrow, RegularPolygon } from '../mobject/geometry.js';
-import { Sphere, Line3D, Cube, Dodecahedron } from '../mobject/three_dimensions.js';
-import { Transform } from '../animation/transform.js';
+import { Circle, Arrow, Polygon } from '../mobject/geometry.js';
+import { Sphere, Line3D } from '../mobject/three_dimensions.js';
+import { Surface } from '../mobject/surface.js';
+import { TAU, PI } from '../foundation/constants.js';
 import { LaggedStart } from '../animation/composition.js';
 import { GrowFromCenter } from '../animation/growing.js';
 import { FadeOut } from '../animation/fading.js';
@@ -30,6 +31,50 @@ const normAxis = (v) => {
   const n = Math.hypot(v[0], v[1], v[2]) || 1;
   return [v[0] / n, v[1] / n, v[2] / n];
 };
+
+// --- Shape support functions: every shape is a radial DEFORMATION of the unit
+// sphere/circle (r as a function of direction), so morphing is just blending r
+// over a fixed-topology mesh — no melty vertex-correspondence, no shape-swap.
+// (Adapted from davepagurek.com/blog/realtime-deformation — displace a base
+// mesh, then recompute normals from the deformed surface, which kty's Surface
+// does for us numerically.)
+const PHI = (1 + Math.sqrt(5)) / 2;
+// The 12 dodecahedron face normals (icosahedron vertex directions), unit.
+const DODECA_NORMALS = (() => {
+  const raw = [];
+  for (const a of [1, -1])
+    for (const b of [1, -1]) {
+      raw.push([0, a, b * PHI], [a, b * PHI, 0], [a * PHI, 0, b]);
+    }
+  return raw.map((v) => {
+    const n = Math.hypot(v[0], v[1], v[2]);
+    return [v[0] / n, v[1] / n, v[2] / n];
+  });
+})();
+// 3D support radii along a unit direction (faces sit at r≈1 for all → similar size).
+const R3 = [
+  () => 1, // sphere
+  (x, y, z) => 1 / Math.max(Math.abs(x), Math.abs(y), Math.abs(z)), // cube
+  (x, y, z) => {
+    let m = 1e-6;
+    for (const n of DODECA_NORMALS) {
+      const d = x * n[0] + y * n[1] + z * n[2];
+      if (d > m) m = d;
+    }
+    return 1 / m; // dodecahedron (intersection of 12 half-spaces)
+  },
+];
+// 2D support radius of a regular n-gon (apothem 1) at angle θ.
+const rPoly2 = (theta, n) => {
+  const seg = TAU / n;
+  const a = ((theta % seg) + seg) % seg;
+  return 1 / Math.cos(a - seg / 2);
+};
+const R2 = [
+  () => 1, // circle
+  (t) => rPoly2(t, 6), // hexagon
+  (t) => rPoly2(t, 12), // dodecagon
+];
 
 // A flat, matte clay dab: a small filled circle in a warm earthy tone.
 // `setColor` recolours it (e.g. per theme); `setOpacity` fades it.
@@ -121,13 +166,13 @@ export class ClayStretch {
   }
 }
 
-// A LIVING clay ball — the dab is never static; it cycles through shapes,
-// shrinking and popping back, to read as clay being smashed/kneaded.
-//   2D: Circle (1×) → Hexagon (½×) → Dodecagon (¼×) → Circle (1×), a true
-//       VMobject morph (Transform) per segment.
-//   3D: Sphere (1×) → Cube (½×) → Dodecahedron (¼×) → Sphere (1×); 3D meshes
-//       can't vertex-morph, so each beat shrinks toward a point, swaps to the
-//       next solid, and grows — with a continuous spin.
+// A LIVING clay ball — the dab is never static; it morphs through shapes,
+// shrinking and popping back, to read as clay being smashed/kneaded. Each shape
+// is a radial DEFORMATION of one base sphere/circle (fixed topology), so the
+// morph is just blending the support radius across a single mesh — smooth, no
+// melty vertex-correspondence and no shape-swap:
+//   2D: Circle (1×) → Hexagon (½×) → Dodecagon (¼×) → Circle (1×)
+//   3D: Sphere (1×) → Cube (½×) → Dodecahedron (¼×) → Sphere (1×)
 // `at(timeSeconds)` returns the current mobject (centred at the origin; the
 // caller positions it). One full cycle takes `cycle` seconds (default 0.8s).
 export class ClaySmash {
@@ -138,6 +183,8 @@ export class ClaySmash {
     cycle = 0.8,
     sizes = [1, 0.5, 0.25],
     spin = 1.6,
+    resolution = [56, 28], // 3D base-sphere grid
+    samples = 72, // 2D outline points
   } = {}) {
     this.color = color;
     this.baseRadius = baseRadius;
@@ -145,59 +192,52 @@ export class ClaySmash {
     this.cycle = cycle;
     this.sizes = sizes;
     this.spin = spin;
-  }
-
-  _poly2d(idx, scale) {
-    const r = this.baseRadius * scale;
-    const m =
-      idx === 0
-        ? new Circle({ radius: r })
-        : new RegularPolygon({ n: idx === 1 ? 6 : 12, radius: r });
-    m.setFill(this.color, 1);
-    m.setStroke(this.color, 0);
-    return m;
-  }
-
-  _solid3d(idx) {
-    let m;
-    if (idx === 0) m = new Sphere({ radius: 1, resolution: [24, 12] });
-    else if (idx === 1) m = new Cube({ sideLength: 1.7 });
-    else m = new Dodecahedron({});
-    if (m.setHeight) m.setHeight(2);
-    m.setColor(this.color);
-    return m;
+    this.resolution = resolution;
+    this.samples = samples;
   }
 
   at(timeSeconds) {
     const p = ((timeSeconds % this.cycle) / this.cycle + 1) % 1;
     const seg = Math.min(2, Math.floor(p * 3));
-    const local = p * 3 - seg;
     const fromIdx = seg;
     const toIdx = (seg + 1) % 3;
+    const b = smooth01(p * 3 - seg); // eased progress within the segment
+    const size = lerp(this.sizes[fromIdx], this.sizes[toIdx], b) * this.baseRadius;
 
     if (this.threeD) {
-      const tiny = 0.05;
-      let idx, s;
-      if (local < 0.5) {
-        idx = fromIdx;
-        s = lerp(this.sizes[fromIdx], tiny, local * 2);
-      } else {
-        idx = toIdx;
-        s = lerp(tiny, this.sizes[toIdx], (local - 0.5) * 2);
-      }
-      const m = this._solid3d(idx);
-      m.scale(this.baseRadius * s);
+      const Ra = R3[fromIdx];
+      const Rb = R3[toIdx];
+      const uvFunc = (u, v) => {
+        const dx = Math.sin(v) * Math.cos(u);
+        const dy = Math.sin(v) * Math.sin(u);
+        const dz = Math.cos(v);
+        const r = lerp(Ra(dx, dy, dz), Rb(dx, dy, dz), b) * size;
+        return [dx * r, dy * r, dz * r];
+      };
+      const m = new Surface({
+        uvFunc,
+        uRange: [0, TAU],
+        vRange: [0, PI],
+        resolution: this.resolution,
+      });
+      m.setColor(this.color);
       m.rotate(timeSeconds * this.spin, normAxis([0.3, 1, 0.25]));
       return m;
     }
 
-    // 2D: true morph from one shape to the next.
-    const from = this._poly2d(fromIdx, this.sizes[fromIdx]);
-    const to = this._poly2d(toIdx, this.sizes[toIdx]);
-    const tr = new Transform(from, to);
-    tr.begin();
-    tr.interpolate(smooth01(local));
-    return from;
+    // 2D: deform a circle's outline by the blended angular support radius.
+    const Ra = R2[fromIdx];
+    const Rb = R2[toIdx];
+    const verts = [];
+    for (let i = 0; i < this.samples; i++) {
+      const t = (i / this.samples) * TAU;
+      const r = lerp(Ra(t), Rb(t), b) * size;
+      verts.push([Math.cos(t) * r, Math.sin(t) * r, 0]);
+    }
+    const poly = new Polygon({ vertices: verts });
+    poly.setFill(this.color, 1);
+    poly.setStroke(this.color, 0);
+    return poly;
   }
 }
 

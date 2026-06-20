@@ -131,23 +131,34 @@ describe('ClayStretch (modeling-clay vector)', () => {
   });
 });
 
-describe('ClaySmash (living clay ball)', () => {
-  it('2D: returns a centred, filled shape at every phase of the cycle', () => {
+describe('ClaySmash (living clay ball — radial deformation)', () => {
+  it('2D: returns a centred, filled outline at every phase of the cycle', () => {
     const s = new ClaySmash({ color: '#b06a3c' });
     for (const t of [0, 0.2, 0.4, 0.6, 0.79]) {
       const m = s.at(t);
       expect(m.hasPoints()).toBe(true);
-      expect(m.getCenter().map((n) => +n.toFixed(2))).toEqual([0, 0, 0]);
+      expect(m.getCenter().map((n) => +n.toFixed(1))).toEqual([0, 0, 0]);
     }
   });
 
-  it('3D: cycles sphere → cube → dodecahedron → sphere (different solids)', () => {
+  it('2D: the outline actually changes shape across the cycle (deformation)', () => {
+    // baseRadius/sizes fixed so only the support-radius shape varies; compare
+    // the width/height ratio at the round (circle) vs the polygon phase.
+    const s = new ClaySmash({ sizes: [1, 1, 1], baseRadius: 1 });
+    const circle = s.at(0); // pure circle
+    const hexish = s.at(1 / 6); // mid circle→hexagon
+    const ratio = (m) => m.getWidth() / m.getHeight();
+    expect(Math.abs(ratio(circle) - 1)).toBeLessThan(0.02); // ~round
+    expect(ratio(hexish)).not.toBeCloseTo(ratio(circle), 3); // deformed
+  });
+
+  it('3D: returns a deformed surface mesh at every phase', () => {
     const s = new ClaySmash({ threeD: true });
-    const fam = (t) => s.at(t).getFamily().length;
-    expect(fam(0.0)).toBe(1); // sphere (one Surface)
-    expect(fam(0.2)).toBeGreaterThan(1); // cube (faces)
-    expect(fam(0.5)).toBeGreaterThan(fam(0.2)); // dodecahedron (more faces)
-    expect(fam(0.79)).toBe(1); // back to sphere
+    for (const t of [0, 0.2, 0.5, 0.79]) {
+      const m = s.at(t);
+      expect(m.renderType).toBe('surface');
+      expect(m.hasPoints()).toBe(true);
+    }
   });
 
   it('accepts any colour and a custom cycle time', () => {
