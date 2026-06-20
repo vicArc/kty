@@ -164,6 +164,15 @@ describe('ClaySmash (living clay ball — radial deformation)', () => {
   it('accepts any colour and a custom cycle time', () => {
     expect(() => new ClaySmash({ color: '#ff00aa', cycle: 1.2 }).at(3.3)).not.toThrow();
   });
+
+  it('continuously morphs the ball into a directional spike (vector)', () => {
+    const s = new ClaySmash({ baseRadius: 0.6 });
+    const ball = s.at(0); // morph 0 → compact ball
+    const vec = s.at(0, { morph: 1, dir: [1, 0, 0], length: 4 }); // pulled into a spike
+    expect(vec.getWidth()).toBeGreaterThan(ball.getWidth() * 1.5);
+    const s3 = new ClaySmash({ threeD: true, baseRadius: 0.6 });
+    expect(s3.at(0, { morph: 1, dir: [1, 1, 1], length: 4 }).renderType).toBe('surface');
+  });
 });
 
 describe('clay helpers', () => {

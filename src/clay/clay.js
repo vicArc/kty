@@ -76,6 +76,16 @@ const R2 = [
   (t) => rPoly2(t, 12), // dodecagon
 ];
 
+// "Spike" deformation: a small clay body that bulges into a sharp point toward a
+// direction — the radius blows up only in the +dir cone. Used to pull the ball
+// into a clay vector (`length` ≈ spike reach in radii).
+const SPIKE_K = 5; // sharpness
+const SPIKE_BODY = 0.4; // residual ball-body radius
+const r3Spike = (x, y, z, d, len) =>
+  SPIKE_BODY + len * Math.pow(Math.max(0, x * d[0] + y * d[1] + z * d[2]), SPIKE_K);
+const r2Spike = (theta, ang, len) =>
+  SPIKE_BODY + len * Math.pow(Math.max(0, Math.cos(theta - ang)), SPIKE_K);
+
 // A flat, matte clay dab: a small filled circle in a warm earthy tone.
 // `setColor` recolours it (e.g. per theme); `setOpacity` fades it.
 export class ClayBall extends Circle {
@@ -196,22 +206,33 @@ export class ClaySmash {
     this.samples = samples;
   }
 
-  at(timeSeconds) {
+  // `vec` (optional) continuously morphs the smashing ball INTO a directional
+  // clay spike — the same base mesh deformed toward `dir` (a "vector pulled from
+  // clay"), so ball↔vector is one continuous morph, no swap:
+  //   vec = { morph: 0..1, dir: [x,y,z], length: spikeLengthInRadii }
+  at(timeSeconds, vec = null) {
     const p = ((timeSeconds % this.cycle) / this.cycle + 1) % 1;
     const seg = Math.min(2, Math.floor(p * 3));
     const fromIdx = seg;
     const toIdx = (seg + 1) % 3;
     const b = smooth01(p * 3 - seg); // eased progress within the segment
-    const size = lerp(this.sizes[fromIdx], this.sizes[toIdx], b) * this.baseRadius;
+    const morph = vec ? Math.min(1, Math.max(0, vec.morph ?? 0)) : 0;
+    const len = vec ? (vec.length ?? 0) : 0;
+    // Smash size cycles; ease to full size as it becomes a vector.
+    const sizeSmash = lerp(this.sizes[fromIdx], this.sizes[toIdx], b) * this.baseRadius;
+    const size = lerp(sizeSmash, this.baseRadius, morph);
 
     if (this.threeD) {
       const Ra = R3[fromIdx];
       const Rb = R3[toIdx];
+      const d = vec && vec.dir ? normAxis(vec.dir) : [0, 0, 1];
       const uvFunc = (u, v) => {
         const dx = Math.sin(v) * Math.cos(u);
         const dy = Math.sin(v) * Math.sin(u);
         const dz = Math.cos(v);
-        const r = lerp(Ra(dx, dy, dz), Rb(dx, dy, dz), b) * size;
+        const rs = lerp(Ra(dx, dy, dz), Rb(dx, dy, dz), b);
+        const rv = r3Spike(dx, dy, dz, d, len);
+        const r = lerp(rs, rv, morph) * size;
         return [dx * r, dy * r, dz * r];
       };
       const m = new Surface({
@@ -221,17 +242,22 @@ export class ClaySmash {
         resolution: this.resolution,
       });
       m.setColor(this.color);
-      m.rotate(timeSeconds * this.spin, normAxis([0.3, 1, 0.25]));
+      // Spin the living ball; settle (stop spinning) as it locks into a vector.
+      m.rotate(timeSeconds * this.spin * (1 - morph), normAxis([0.3, 1, 0.25]));
       return m;
     }
 
-    // 2D: deform a circle's outline by the blended angular support radius.
+    // 2D: deform a circle's outline by the blended angular support radius,
+    // optionally pulled into a spike toward `dir`.
     const Ra = R2[fromIdx];
     const Rb = R2[toIdx];
+    const ang = vec && vec.dir ? Math.atan2(vec.dir[1], vec.dir[0]) : 0;
     const verts = [];
     for (let i = 0; i < this.samples; i++) {
       const t = (i / this.samples) * TAU;
-      const r = lerp(Ra(t), Rb(t), b) * size;
+      const rs = lerp(Ra(t), Rb(t), b);
+      const rv = r2Spike(t, ang, len);
+      const r = lerp(rs, rv, morph) * size;
       verts.push([Math.cos(t) * r, Math.sin(t) * r, 0]);
     }
     const poly = new Polygon({ vertices: verts });
