@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { ClayBall, CLAY_COLORS, clayShow, clayDissolve } from '../../src/clay/clay.js';
+import {
+  ClayBall,
+  ClayBall3D,
+  ClayStretch,
+  CLAY_COLORS,
+  clayShow,
+  clayDissolve,
+} from '../../src/clay/clay.js';
 import { ClayMorph, ClayIn, ClayOut, ClayPop, ClayPopOut } from '../../src/animation/clay.js';
 import { Square } from '../../src/mobject/geometry.js';
 
@@ -93,6 +100,33 @@ describe('ClayPopOut', () => {
     m.interpolate(1);
     m.finish();
     expect(sq.getFillOpacity()).toBeLessThan(0.1);
+  });
+});
+
+describe('ClayStretch (modeling-clay vector)', () => {
+  it('2D: a blob at the start grows into a vector to the target', () => {
+    const cs = new ClayStretch({ from: [0, 0], to: [3, 3], color: '#39c' });
+    expect(cs.at(0)).toHaveLength(1); // just the clay blob, no vector yet
+    const mid = cs.at(0.5);
+    expect(mid.length).toBe(2); // arrow + blob
+    const end = cs.at(1);
+    const ball = end[end.length - 1];
+    expect(ball.getCenter()[0]).toBeCloseTo(3, 2);
+    expect(ball.getCenter()[1]).toBeCloseTo(3, 2);
+  });
+
+  it('3D: ball stretches along x,y,z to the target', () => {
+    const cs = new ClayStretch({ from: [0, 0, 0], to: [2, 1, 3], threeD: true });
+    const end = cs.at(1);
+    const ball = end[end.length - 1];
+    expect(ball.getCenter().map((n) => +n.toFixed(2))).toEqual([2, 1, 3]);
+  });
+
+  it('clamps alpha and works for any colour', () => {
+    const cs = new ClayStretch({ from: [0, 0], to: [1, 0], color: '#ff00aa' });
+    expect(() => cs.at(-1)).not.toThrow();
+    expect(() => cs.at(2)).not.toThrow();
+    expect(new ClayBall3D({ color: '#ff00aa' })).toBeTruthy();
   });
 });
 
