@@ -165,13 +165,16 @@ describe('ClaySmash (living clay ball — radial deformation)', () => {
     expect(() => new ClaySmash({ color: '#ff00aa', cycle: 1.2 }).at(3.3)).not.toThrow();
   });
 
-  it('continuously morphs the ball into a directional spike (vector)', () => {
-    const s = new ClaySmash({ baseRadius: 0.6 });
-    const ball = s.at(0); // morph 0 → compact ball
-    const vec = s.at(0, { morph: 1, dir: [1, 0, 0], length: 4 }); // pulled into a spike
-    expect(vec.getWidth()).toBeGreaterThan(ball.getWidth() * 1.5);
-    const s3 = new ClaySmash({ threeD: true, baseRadius: 0.6 });
-    expect(s3.at(0, { morph: 1, dir: [1, 1, 1], length: 4 }).renderType).toBe('surface');
+  it('continuously morphs the ball into a THIN directional vector', () => {
+    const s = new ClaySmash({ baseRadius: 0.7 });
+    const vec = s.at(0, { morph: 1, dir: [1, 0, 0], length: 5, thickness: 0.07 });
+    // Long along the axis, thin across it (a line, not a fat blob).
+    expect(vec.getWidth()).toBeGreaterThan(4);
+    expect(vec.getHeight()).toBeLessThan(0.4);
+    const s3 = new ClaySmash({ threeD: true, baseRadius: 0.7 });
+    const v3 = s3.at(0, { morph: 1, dir: [1, 0, 0], length: 5, thickness: 0.07 });
+    expect(v3.renderType).toBe('surface');
+    expect(v3.getHeight()).toBeLessThan(0.4);
   });
 });
 
