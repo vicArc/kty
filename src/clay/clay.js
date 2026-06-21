@@ -31,6 +31,11 @@ const normAxis = (v) => {
   const n = Math.hypot(v[0], v[1], v[2]) || 1;
   return [v[0] / n, v[1] / n, v[2] / n];
 };
+const cross3 = (a, b) => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+];
 
 // --- Shape support functions: every shape is a radial DEFORMATION of the unit
 // sphere/circle (r as a function of direction), so morphing is just blending r
@@ -196,12 +201,12 @@ export class ClaySmash {
     this.samples = samples;
   }
 
-  // `vec` (optional) continuously morphs the smashing ball INTO a thin clay
-  // vector. A radial support can't make a thin line (its cross-section stays
-  // fat), so the vector state is an ANISOTROPIC stretch/squash of the base mesh:
-  // stretch along `dir` to span [0, length], squash perpendicular to `thickness`
-  // — a thin needle from the origin to the tip. Per-vertex lerp keeps ball↔vector
-  // one continuous morph (no swap).
+  // `vec` (optional) continuously morphs the smashing ball INTO a clay vector of
+  // UNIFORM thickness — a constant-radius tube (3D) / constant-width bar (2D)
+  // from the origin to the tip along `dir`, with flat ends. Built by remapping
+  // the base mesh (axial position along `dir`, fixed perpendicular `thickness`),
+  // lerped per-vertex with the smash shape so ball↔vector is one continuous
+  // morph (no swap).
   //   vec = { morph: 0..1, dir: [x,y,z], length: worldLength, thickness? }
   at(timeSeconds, vec = null) {
     const p = ((timeSeconds % this.cycle) / this.cycle + 1) % 1;
@@ -216,18 +221,11 @@ export class ClaySmash {
     const ax = vec && vec.dir ? normAxis(vec.dir) : [0, 0, 1];
     const vLen = vec ? (vec.length ?? 0) : 0;
     const thin = vec ? (vec.thickness ?? 0.07) : 0.07;
-
-    // Needle position for a base unit direction d=[dx,dy,dz]: project onto the
-    // axis (stretch to [0,length]) + perpendicular remainder (squashed to thin).
-    const needle = (dx, dy, dz) => {
-      const a = dx * ax[0] + dy * ax[1] + dz * ax[2];
-      const axial = ((a + 1) / 2) * vLen;
-      return [
-        ax[0] * axial + (dx - a * ax[0]) * thin,
-        ax[1] * axial + (dy - a * ax[1]) * thin,
-        ax[2] * axial + (dz - a * ax[2]) * thin,
-      ];
-    };
+    // Orthonormal basis perpendicular to the vector axis (for the tube/bar).
+    const up = Math.abs(ax[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+    const e1 = normAxis(cross3(ax, up));
+    const e2 = cross3(ax, e1);
+    const CAP = 0.18; // v-band (radians) over which the 3D tube closes its ends
 
     if (this.threeD) {
       const Ra = R3[fromIdx];
@@ -239,8 +237,18 @@ export class ClaySmash {
         const rs = lerp(Ra(dx, dy, dz), Rb(dx, dy, dz), b) * size;
         const sp = [dx * rs, dy * rs, dz * rs];
         if (morph <= 0) return sp;
-        const np = needle(dx, dy, dz);
-        return [lerp(sp[0], np[0], morph), lerp(sp[1], np[1], morph), lerp(sp[2], np[2], morph)];
+        // Uniform tube: axial from v (0..length), constant radius `thin`,
+        // only tapering to a closed end within the tiny CAP band at each pole.
+        const axial = (v / PI) * vLen;
+        const rad = thin * Math.min(1, Math.min(v, PI - v) / CAP);
+        const cu = Math.cos(u) * rad;
+        const su = Math.sin(u) * rad;
+        const tp = [
+          ax[0] * axial + e1[0] * cu + e2[0] * su,
+          ax[1] * axial + e1[1] * cu + e2[1] * su,
+          ax[2] * axial + e1[2] * cu + e2[2] * su,
+        ];
+        return [lerp(sp[0], tp[0], morph), lerp(sp[1], tp[1], morph), lerp(sp[2], tp[2], morph)];
       };
       const m = new Surface({
         uvFunc,
@@ -254,9 +262,12 @@ export class ClaySmash {
       return m;
     }
 
-    // 2D: same anisotropic stretch on the circle outline.
+    // 2D: uniform-width bar — axial from cos(t), constant ±thin perpendicular
+    // (sign from sin(t)); flat ends. Lerped with the smash outline.
     const Ra = R2[fromIdx];
     const Rb = R2[toIdx];
+    const px = -ax[1]; // perpendicular unit (in-plane)
+    const py = ax[0];
     const verts = [];
     for (let i = 0; i < this.samples; i++) {
       const t = (i / this.samples) * TAU;
@@ -266,9 +277,12 @@ export class ClaySmash {
       let x = dx * rs;
       let y = dy * rs;
       if (morph > 0) {
-        const np = needle(dx, dy, 0);
-        x = lerp(x, np[0], morph);
-        y = lerp(y, np[1], morph);
+        const axial = ((dx + 1) / 2) * vLen;
+        const side = dy >= 0 ? thin : -thin;
+        const bx = ax[0] * axial + px * side;
+        const by = ax[1] * axial + py * side;
+        x = lerp(x, bx, morph);
+        y = lerp(y, by, morph);
       }
       verts.push([x, y, 0]);
     }
