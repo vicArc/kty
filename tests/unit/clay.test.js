@@ -4,11 +4,12 @@ import {
   ClayBall3D,
   ClayStretch,
   ClaySmash,
+  ClayVector,
   CLAY_COLORS,
   clayShow,
   clayDissolve,
 } from '../../src/clay/clay.js';
-import { ClayMorph, ClayIn, ClayOut, ClayPop, ClayPopOut } from '../../src/animation/clay.js';
+import { ClayIn, ClayOut, ClayPop, ClayPopOut } from '../../src/animation/clay.js';
 import { Square } from '../../src/mobject/geometry.js';
 
 describe('ClayBall', () => {
@@ -26,43 +27,50 @@ describe('ClayBall', () => {
   });
 });
 
-describe('ClayMorph (claymation)', () => {
-  it('defaults to a 0.3s transition with three phases', () => {
-    const m = new ClayIn(new Square({ sideLength: 1 }));
-    expect(m.runTime).toBeCloseTo(0.3, 5);
-    expect(m.phases).toHaveLength(3);
+describe('ClayVector (general build/dissolve pipeline)', () => {
+  it('appears as a growing set of mobjects and holds a single formed vector', () => {
+    const cv = new ClayVector({ dir: [1, 0, 0], length: 4 });
+    // Early appear: the main blob + chain-merge balls.
+    expect(cv.frame({ appear: 0.1 }).length).toBeGreaterThan(1);
+    // Hold: exactly the one formed vector, long and thin.
+    const held = cv.frame({ hold: true });
+    expect(held).toHaveLength(1);
+    expect(held[0].getWidth()).toBeGreaterThan(3);
+    expect(held[0].getHeight()).toBeLessThan(0.5);
   });
 
-  it('honours custom timing, colour, size and start position', () => {
-    const m = new ClayMorph(new Square({ sideLength: 1 }), {
-      runTime: 0.8,
-      color: CLAY_COLORS.ochre,
-      ballRadius: 0.3,
-      ballCenter: [2, 1, 0],
-    });
-    expect(m.runTime).toBeCloseTo(0.8, 5);
-    expect(m.clay.getCenter()[0]).toBeCloseTo(2, 5);
-    expect(m.clay.getCenter()[1]).toBeCloseTo(1, 5);
+  it('dissolves via two split half-pears, then nothing when gone', () => {
+    const cv = new ClayVector({ dir: [1, 0, 0], length: 4 });
+    expect(cv.frame({ vanish: 0.85 })).toHaveLength(2); // split into two
+    expect(cv.frame({ gone: true })).toHaveLength(0);
   });
 
-  it('ClayIn reshapes the clay ball into the target (point-aligned)', () => {
-    const target = new Square({ sideLength: 2 });
-    const m = new ClayIn(target);
+  it('works in 3D and never throws across the timeline', () => {
+    const cv = new ClayVector({ threeD: true, dir: [2, 1, 3], length: 5 });
+    for (const a of [0, 0.2, 0.5, 0.8, 1]) expect(() => cv.frame({ appear: a })).not.toThrow();
+    for (const a of [0, 0.3, 0.6, 1]) expect(() => cv.frame({ vanish: a })).not.toThrow();
+    expect(cv.frame({ hold: true })[0].renderType).toBe('surface');
+  });
+});
+
+describe('ClayIn / ClayOut (clay build/dissolve animations)', () => {
+  it('ClayIn builds the vector into a Group and ends holding it', () => {
+    const m = new ClayIn(new ClayVector({ length: 4 }));
     m.begin();
     for (const a of [0, 0.25, 0.5, 0.75, 1]) expect(() => m.interpolate(a)).not.toThrow();
     m.finish();
-    // After morphing, the clay shares the target's family structure.
-    expect(m.clay.getFamily().length).toBe(target.getFamily().length);
+    // After the build, the group holds the single formed vector.
+    expect(m.mobject.submobjects).toHaveLength(1);
+    expect(m.getAllMobjects()).toEqual([m.mobject]);
   });
 
-  it('ClayOut fades the target away by the end', () => {
-    const target = new Square({ sideLength: 2, fillColor: '#b06a3c', fillOpacity: 1 });
-    const m = new ClayOut(target);
+  it('ClayOut starts from the formed mark and empties the group by the end', () => {
+    const m = new ClayOut(new ClayVector({ length: 4 }));
     m.begin();
+    expect(m.mobject.submobjects.length).toBeGreaterThan(0); // formed at the start
     for (const a of [0, 0.5, 1]) expect(() => m.interpolate(a)).not.toThrow();
     m.finish();
-    expect(target.getFillOpacity()).toBeLessThan(0.1);
-    expect(target.getStrokeOpacity()).toBeLessThan(0.1);
+    expect(m.mobject.submobjects).toHaveLength(0); // gone
   });
 });
 

@@ -422,6 +422,113 @@ export class ClaySmash {
   }
 }
 
+// The general clay BUILD/DISSOLVE pipeline for a vector, render-stateless (fresh
+// mobjects per `frame(...)` call). APPEAR: three clay balls chain-merge into a
+// blob that forms a pear → flattens to an oval (2D) / torus (3D) → stretches into
+// a uniform-thickness clay vector toward `dir`. DISSOLVE: the reverse to the
+// pear, which then SPLITS into two half-pears that drift apart and fade. Drive
+// `frame` with one of: {appear:0..1}, {hold:true}, {vanish:0..1}, {gone:true}.
+// The Animation wrappers `ClayIn`/`ClayOut` (animation/clay.js) play this with
+// Scene.play; or call `frame` yourself inside a rAF loop.
+const cl01 = (t) => Math.min(1, Math.max(0, t));
+export class ClayVector {
+  constructor({
+    color = CLAY_COLORS.terracotta,
+    threeD = false,
+    dir = [1, 0, 0],
+    length = 3,
+    thickness = 0.12,
+    baseRadius = 0.9,
+  } = {}) {
+    this.color = color;
+    this.threeD = threeD;
+    this.dir = dir;
+    this.length = length;
+    this.thickness = thickness;
+    this.main = new ClaySmash({
+      color,
+      threeD,
+      baseRadius,
+      shapes: threeD
+        ? [claySphere3D, clayPear3D, clayTorus3D]
+        : [clayCircle2D, clayPear2D, clayOval2D],
+    });
+    this.ball = new ClaySmash({
+      color,
+      threeD,
+      baseRadius: baseRadius * 0.66,
+      shapes: threeD ? [claySphere3D] : [clayCircle2D],
+    });
+  }
+
+  _vec(morph) {
+    return { dir: this.dir, length: this.length, thickness: this.thickness, morph };
+  }
+
+  frame({ appear = 0, vanish = 0, hold = false, gone = false } = {}) {
+    if (gone) return [];
+    if (hold) return [this.main.at({ progress: 1, vec: this._vec(1) })];
+
+    if (vanish > 0) {
+      const a = cl01(vanish);
+      if (a < 0.5) {
+        // vector → oval/torus → pear
+        const h = a * 2;
+        let progress;
+        let morph;
+        if (h < 0.5) {
+          progress = 1;
+          morph = 1 - smooth01(h * 2);
+        } else {
+          progress = 1 - smooth01((h - 0.5) * 2) * 0.5;
+          morph = 0;
+        }
+        return [this.main.at({ progress, vec: morph > 0 ? this._vec(morph) : null })];
+      }
+      // splitClay: the pear divides into two half-pears that drift apart + fade.
+      const s = (a - 0.5) * 2;
+      const sc = lerp(1, 0.5, smooth01(s));
+      const apart = lerp(0, this.threeD ? 2 : 2.4, smooth01(s));
+      const fade = 1 - smooth01(Math.max(0, (s - 0.5) * 2));
+      const objs = [];
+      for (const sign of [-1, 1]) {
+        const m = this.main.at({ progress: 0.5 }); // a pear
+        m.scale(sc * fade);
+        m.moveTo([sign * apart, 0, 0]);
+        objs.push(m);
+      }
+      return objs;
+    }
+
+    // appear: chain-merge (0..0.4) → pear→oval/torus (0.4..0.7) → vector (0.7..1).
+    const a = cl01(appear);
+    let progress = 0;
+    let morph = 0;
+    const extras = [];
+    if (a < 0.4) {
+      const k = a / 0.4;
+      progress = smooth01(k) * 0.5; // circle/sphere → pear
+      const e1 = Math.min(1, k / 0.5);
+      const e2 = Math.max(0, (k - 0.5) / 0.5);
+      if (e1 < 1) extras.push({ from: [-2, 1.3, 0], t: smooth01(e1) });
+      if (e2 < 1 && k >= 0.5) extras.push({ from: [2, 1.3, 0], t: smooth01(e2) });
+    } else if (a < 0.7) {
+      progress = 0.5 + smooth01((a - 0.4) / 0.3) * 0.5; // pear → oval/torus
+    } else {
+      progress = 1;
+      morph = smooth01((a - 0.7) / 0.3); // oval/torus → vector
+    }
+    const objs = [this.main.at({ progress, vec: morph > 0 ? this._vec(morph) : null })];
+    for (const e of extras) {
+      const b = this.ball.at({ time: 0 });
+      b.scale(1 - e.t);
+      b.moveTo([lerp(e.from[0], 0, e.t), lerp(e.from[1], 0, e.t), lerp(e.from[2], 0, e.t)]);
+      objs.push(b);
+    }
+    return objs;
+  }
+}
+
 // Stagger-grow a set of clay balls into existence (a clay take on ShowCreation).
 export function clayShow(balls, { lagRatio = 0.05 } = {}) {
   return new LaggedStart(
