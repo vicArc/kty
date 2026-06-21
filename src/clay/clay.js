@@ -105,6 +105,11 @@ const SHAPES_3D = [
   (u, v) => torusPt(u, v),
 ];
 
+// Base shape maps, exported so callers can compose custom morph sequences
+// (e.g. circle↔pear / sphere↔pear) via ClaySmash's `shapes` option.
+export const clayCircle2D = (t) => [Math.cos(t), Math.sin(t)];
+export const claySphere3D = (u, v) => sphereDir(u, v);
+
 // 2D: angular support radius of a regular n-gon (apothem 1).
 const rPoly2 = (theta, n) => {
   const seg = TAU / n;
@@ -127,6 +132,83 @@ const SHAPES_2D = [
     return [Math.cos(t) * r, Math.sin(t) * r];
   },
 ];
+
+// --- Mathematical pear: superellipse top (centred (0,1)) ∪ circle bottom
+// (centred (0,-1), r²=2). 3D = revolve the profile about y (x² → x²+z²).
+// Precompute the radial boundary r(θ) from the origin = max(circle exit,
+// superellipse exit), then normalise to a centred ~unit shape.
+const PEAR_N1 = 2; // squareness of the top (2 = smooth shoulders)
+const PEAR_SAMPLES = 721;
+const pearRadialTable = (() => {
+  const tbl = new Float64Array(PEAR_SAMPLES);
+  // Circle x²+(y+1)²=2, ray from origin: t² + 2·sinθ·t − 1 = 0.
+  const circleT = (s) => -s + Math.sqrt(s * s + 1);
+  // Superellipse x^(2n)+(y−1)^(2n)=1; f(t) crosses 0 at the far exit (upward rays).
+  const sef = (t, c, s) =>
+    Math.pow(Math.abs(t * c), 2 * PEAR_N1) + Math.pow(Math.abs(t * s - 1), 2 * PEAR_N1) - 1;
+  for (let i = 0; i < PEAR_SAMPLES; i++) {
+    const th = (i / (PEAR_SAMPLES - 1)) * TAU;
+    const c = Math.cos(th);
+    const s = Math.sin(th);
+    let tse = 0;
+    if (s > 1e-6) {
+      let prev = sef(1e-3, c, s);
+      for (let t = 0.04; t <= 2.6; t += 0.02) {
+        const f = sef(t, c, s);
+        if (prev < 0 && f >= 0) {
+          let lo = t - 0.02;
+          let hi = t;
+          for (let k = 0; k < 26; k++) {
+            const mid = (lo + hi) / 2;
+            if (sef(mid, c, s) < 0) lo = mid;
+            else hi = mid;
+          }
+          tse = (lo + hi) / 2;
+          break;
+        }
+        prev = f;
+      }
+    }
+    tbl[i] = Math.max(circleT(s), tse);
+  }
+  return tbl;
+})();
+const pearRadius = (theta) => {
+  const a = ((theta % TAU) + TAU) % TAU;
+  const x = (a / TAU) * (PEAR_SAMPLES - 1);
+  const i = Math.floor(x);
+  const f = x - i;
+  return pearRadialTable[i] * (1 - f) + pearRadialTable[Math.min(PEAR_SAMPLES - 1, i + 1)] * f;
+};
+// Normalisation: centre vertically and scale to half-height 1.
+const PEAR_NORM = (() => {
+  let ymin = Infinity;
+  let ymax = -Infinity;
+  for (let i = 0; i < PEAR_SAMPLES; i++) {
+    const th = (i / (PEAR_SAMPLES - 1)) * TAU;
+    const y = pearRadialTable[i] * Math.sin(th);
+    if (y < ymin) ymin = y;
+    if (y > ymax) ymax = y;
+  }
+  const cy = (ymin + ymax) / 2;
+  return { cy, scale: 2 / (ymax - ymin) };
+})();
+// Pear outline point (2D) at angle θ — centred, ~unit, upright (stem up).
+export const clayPear2D = (theta) => {
+  const r = pearRadius(theta);
+  return [
+    r * Math.cos(theta) * PEAR_NORM.scale,
+    (r * Math.sin(theta) - PEAR_NORM.cy) * PEAR_NORM.scale,
+  ];
+};
+// Pear surface (3D): revolve the right-half profile about the y-axis.
+export const clayPear3D = (u, v) => {
+  const thP = Math.PI / 2 - v; // v:0→π maps profile top→bottom
+  const r = pearRadius(thP);
+  const R = r * Math.cos(thP) * PEAR_NORM.scale;
+  const Y = (r * Math.sin(thP) - PEAR_NORM.cy) * PEAR_NORM.scale;
+  return [R * Math.cos(u), Y, R * Math.sin(u)];
+};
 
 // A flat, matte clay dab: a small filled circle in a warm earthy tone.
 // `setColor` recolours it (e.g. per theme); `setOpacity` fades it.
@@ -235,6 +317,7 @@ export class ClaySmash {
     cycle = 0.8,
     resolution = [56, 28], // 3D base-sphere grid
     samples = 72, // 2D outline points
+    shapes = null, // override the morph sequence (array of (u,v)/(t) fns)
   } = {}) {
     this.color = color;
     this.baseRadius = baseRadius;
@@ -242,7 +325,7 @@ export class ClaySmash {
     this.cycle = cycle;
     this.resolution = resolution;
     this.samples = samples;
-    this.shapes = threeD ? SHAPES_3D : SHAPES_2D;
+    this.shapes = shapes || (threeD ? SHAPES_3D : SHAPES_2D);
   }
 
   // Resolve the active shape pair + blend from `progress` (0..1, once) or
