@@ -106,9 +106,16 @@ const SHAPES_3D = [
 ];
 
 // Base shape maps, exported so callers can compose custom morph sequences
-// (e.g. circle↔pear / sphere↔pear) via ClaySmash's `shapes` option.
+// (e.g. circle→pear→oval / sphere→pear→torus) via ClaySmash's `shapes` option.
 export const clayCircle2D = (t) => [Math.cos(t), Math.sin(t)];
 export const claySphere3D = (u, v) => sphereDir(u, v);
+export const clayTorus3D = (u, v) => torusPt(u, v);
+export const clayOval2D = (t) => {
+  const a = 1.3;
+  const b = 0.78;
+  const r = 1 / Math.hypot(Math.cos(t) / a, Math.sin(t) / b);
+  return [Math.cos(t) * r, Math.sin(t) * r];
+};
 
 // 2D: angular support radius of a regular n-gon (apothem 1).
 const rPoly2 = (theta, n) => {
