@@ -37,48 +37,95 @@ const cross3 = (a, b) => [
   a[0] * b[1] - a[1] * b[0],
 ];
 
-// --- Shape support functions: every shape is a radial DEFORMATION of the unit
-// sphere/circle (r as a function of direction), so morphing is just blending r
-// over a fixed-topology mesh — no melty vertex-correspondence, no shape-swap.
+// --- Shape morph steps. Every shape is a (u,v)→point map of ONE base grid
+// (sphere in 3D / circle in 2D), so morphing between consecutive shapes is a
+// per-vertex blend over a fixed-topology mesh — smooth, no shape-swap. Even a
+// torus works: the sphere grid wraps into it (the hole opens up continuously).
 // (Adapted from davepagurek.com/blog/realtime-deformation — displace a base
-// mesh, then recompute normals from the deformed surface, which kty's Surface
-// does for us numerically.)
+// mesh; kty's Surface re-derives normals from the deformed grid.)
 const PHI = (1 + Math.sqrt(5)) / 2;
-// The 12 dodecahedron face normals (icosahedron vertex directions), unit.
-const DODECA_NORMALS = (() => {
-  const raw = [];
-  for (const a of [1, -1])
-    for (const b of [1, -1]) {
-      raw.push([0, a, b * PHI], [a, b * PHI, 0], [a * PHI, 0, b]);
-    }
-  return raw.map((v) => {
-    const n = Math.hypot(v[0], v[1], v[2]);
+const normMany = (raw) =>
+  raw.map((v) => {
+    const n = Math.hypot(v[0], v[1], v[2]) || 1;
     return [v[0] / n, v[1] / n, v[2] / n];
   });
-})();
-// 3D support radii along a unit direction (faces sit at r≈1 for all → similar size).
-const R3 = [
-  () => 1, // sphere
-  (x, y, z) => 1 / Math.max(Math.abs(x), Math.abs(y), Math.abs(z)), // cube
-  (x, y, z) => {
-    let m = 1e-6;
-    for (const n of DODECA_NORMALS) {
-      const d = x * n[0] + y * n[1] + z * n[2];
-      if (d > m) m = d;
-    }
-    return 1 / m; // dodecahedron (intersection of 12 half-spaces)
-  },
+// Dodecahedron's 12 face normals = icosahedron vertices: (0,±1,±φ) + cyclic.
+const DODECA_FACE_NORMALS = normMany(
+  (() => {
+    const r = [];
+    for (const a of [1, -1])
+      for (const b of [1, -1]) r.push([0, a, b * PHI], [a, b * PHI, 0], [a * PHI, 0, b]);
+    return r;
+  })()
+);
+// Icosahedron's 20 face normals = dodecahedron vertices: cube (±1,±1,±1) + cyclic.
+const ICOSA_FACE_NORMALS = normMany(
+  (() => {
+    const r = [];
+    for (const x of [1, -1]) for (const y of [1, -1]) for (const z of [1, -1]) r.push([x, y, z]);
+    const a = 1 / PHI;
+    for (const s1 of [1, -1])
+      for (const s2 of [1, -1])
+        r.push([0, s1 * a, s2 * PHI], [s1 * a, s2 * PHI, 0], [s2 * PHI, 0, s1 * a]);
+    return r;
+  })()
+);
+// Support radius (faces at r≈1) for a polytope given its face normals.
+const supportR = (x, y, z, normals) => {
+  let m = 1e-6;
+  for (const n of normals) {
+    const d = x * n[0] + y * n[1] + z * n[2];
+    if (d > m) m = d;
+  }
+  return 1 / m;
+};
+
+// Base sphere direction and helpers.
+const sphereDir = (u, v) => {
+  const sv = Math.sin(v);
+  return [sv * Math.cos(u), sv * Math.sin(u), Math.cos(v)];
+};
+const radial3 = (u, v, R) => {
+  const d = sphereDir(u, v);
+  const r = R(d[0], d[1], d[2]);
+  return [d[0] * r, d[1] * r, d[2] * r];
+};
+const torusPt = (u, v) => {
+  const tv = 2 * v; // sphere v∈[0,π] → tube angle [0,2π]
+  const R = 0.62;
+  const r = 0.34;
+  const ct = Math.cos(tv);
+  return [(R + r * ct) * Math.cos(u), (R + r * ct) * Math.sin(u), r * Math.sin(tv)];
+};
+// 3D step sequence: sphere → icosahedron → dodecahedron → torus.
+const SHAPES_3D = [
+  (u, v) => sphereDir(u, v),
+  (u, v) => radial3(u, v, (x, y, z) => supportR(x, y, z, ICOSA_FACE_NORMALS)),
+  (u, v) => radial3(u, v, (x, y, z) => supportR(x, y, z, DODECA_FACE_NORMALS)),
+  (u, v) => torusPt(u, v),
 ];
-// 2D support radius of a regular n-gon (apothem 1) at angle θ.
+
+// 2D: angular support radius of a regular n-gon (apothem 1).
 const rPoly2 = (theta, n) => {
   const seg = TAU / n;
   const a = ((theta % seg) + seg) % seg;
   return 1 / Math.cos(a - seg / 2);
 };
-const R2 = [
-  () => 1, // circle
-  (t) => rPoly2(t, 6), // hexagon
-  (t) => rPoly2(t, 12), // dodecagon
+const polyPt = (t, n) => {
+  const r = rPoly2(t, n);
+  return [Math.cos(t) * r, Math.sin(t) * r];
+};
+// 2D step sequence: circle → hexagon → dodecagon → "dona" (holeless oval ring).
+const SHAPES_2D = [
+  (t) => [Math.cos(t), Math.sin(t)],
+  (t) => polyPt(t, 6),
+  (t) => polyPt(t, 12),
+  (t) => {
+    const a = 1.3;
+    const b = 0.78;
+    const r = 1 / Math.hypot(Math.cos(t) / a, Math.sin(t) / b);
+    return [Math.cos(t) * r, Math.sin(t) * r];
+  },
 ];
 
 // A flat, matte clay dab: a small filled circle in a warm earthy tone.
@@ -171,23 +218,21 @@ export class ClayStretch {
   }
 }
 
-// A LIVING clay ball — the dab is never static; it morphs through shapes,
-// shrinking and popping back, to read as clay being smashed/kneaded. Each shape
-// is a radial DEFORMATION of one base sphere/circle (fixed topology), so the
-// morph is just blending the support radius across a single mesh — smooth, no
-// melty vertex-correspondence and no shape-swap:
-//   2D: Circle (1×) → Hexagon (½×) → Dodecagon (¼×) → Circle (1×)
-//   3D: Sphere (1×) → Cube (½×) → Dodecahedron (¼×) → Sphere (1×)
-// `at(timeSeconds)` returns the current mobject (centred at the origin; the
-// caller positions it). One full cycle takes `cycle` seconds (default 0.8s).
+// A LIVING clay ball that morphs through a SHAPE SEQUENCE (one base mesh, fixed
+// topology, smooth per-vertex blends) to read as clay being kneaded:
+//   2D: circle → hexagon → dodecagon → "dona" (oval ring)
+//   3D: sphere → icosahedron → dodecahedron → torus
+// Driven either by `progress` (0..1 across the sequence, exactly once — for the
+// vector/icon "appear") or by `time` (free cycling through every shape — for the
+// standalone ball demo). `vec` continuously morphs the current shape INTO a
+// uniform-thickness clay vector (tube/bar) toward `dir`. `at(...)` returns the
+// mobject centred at the origin; the caller positions/rotates it.
 export class ClaySmash {
   constructor({
     color = CLAY_COLORS.terracotta,
     baseRadius = 0.6,
     threeD = false,
     cycle = 0.8,
-    sizes = [1, 0.5, 0.25],
-    spin = 1.6,
     resolution = [56, 28], // 3D base-sphere grid
     samples = 72, // 2D outline points
   } = {}) {
@@ -195,50 +240,51 @@ export class ClaySmash {
     this.baseRadius = baseRadius;
     this.threeD = threeD;
     this.cycle = cycle;
-    this.sizes = sizes;
-    this.spin = spin;
     this.resolution = resolution;
     this.samples = samples;
+    this.shapes = threeD ? SHAPES_3D : SHAPES_2D;
   }
 
-  // `vec` (optional) continuously morphs the smashing ball INTO a clay vector of
-  // UNIFORM thickness — a constant-radius tube (3D) / constant-width bar (2D)
-  // from the origin to the tip along `dir`, with flat ends. Built by remapping
-  // the base mesh (axial position along `dir`, fixed perpendicular `thickness`),
-  // lerped per-vertex with the smash shape so ball↔vector is one continuous
-  // morph (no swap).
-  //   vec = { morph: 0..1, dir: [x,y,z], length: worldLength, thickness? }
-  at(timeSeconds, vec = null) {
-    const p = ((timeSeconds % this.cycle) / this.cycle + 1) % 1;
-    const seg = Math.min(2, Math.floor(p * 3));
-    const fromIdx = seg;
-    const toIdx = (seg + 1) % 3;
-    const b = smooth01(p * 3 - seg); // eased progress within the segment
+  // Resolve the active shape pair + blend from `progress` (0..1, once) or
+  // `time` (cycling). Returns [shapeA, shapeB, blend].
+  _segment({ progress, time }) {
+    const n = this.shapes.length;
+    if (progress != null) {
+      const x = Math.min(1, Math.max(0, progress)) * (n - 1);
+      const from = Math.min(n - 2, Math.floor(x));
+      return [this.shapes[from], this.shapes[from + 1], smooth01(x - from)];
+    }
+    const p = ((time % this.cycle) / this.cycle + 1) % 1;
+    const seg = Math.floor(p * n) % n;
+    return [this.shapes[seg], this.shapes[(seg + 1) % n], smooth01(p * n - Math.floor(p * n))];
+  }
+
+  //   opts = { time?, progress?, spin?, vec? }
+  //   vec  = { morph: 0..1, dir: [x,y,z], length: worldLength, thickness? }
+  at(opts = {}) {
+    const { time = 0, progress = null, spin = 0, vec = null } = opts;
+    const [fA, fB, b] = this._segment({ progress, time });
+    const size = this.baseRadius;
     const morph = vec ? Math.min(1, Math.max(0, vec.morph ?? 0)) : 0;
-    // Smash size cycles; ease to full size as it becomes a vector.
-    const sizeSmash = lerp(this.sizes[fromIdx], this.sizes[toIdx], b) * this.baseRadius;
-    const size = lerp(sizeSmash, this.baseRadius, morph);
     const ax = vec && vec.dir ? normAxis(vec.dir) : [0, 0, 1];
     const vLen = vec ? (vec.length ?? 0) : 0;
     const thin = vec ? (vec.thickness ?? 0.07) : 0.07;
-    // Orthonormal basis perpendicular to the vector axis (for the tube/bar).
     const up = Math.abs(ax[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
     const e1 = normAxis(cross3(ax, up));
     const e2 = cross3(ax, e1);
-    const CAP = 0.18; // v-band (radians) over which the 3D tube closes its ends
+    const CAP = 0.18;
 
     if (this.threeD) {
-      const Ra = R3[fromIdx];
-      const Rb = R3[toIdx];
       const uvFunc = (u, v) => {
-        const dx = Math.sin(v) * Math.cos(u);
-        const dy = Math.sin(v) * Math.sin(u);
-        const dz = Math.cos(v);
-        const rs = lerp(Ra(dx, dy, dz), Rb(dx, dy, dz), b) * size;
-        const sp = [dx * rs, dy * rs, dz * rs];
+        const a = fA(u, v);
+        const c = fB(u, v);
+        const sp = [
+          lerp(a[0], c[0], b) * size,
+          lerp(a[1], c[1], b) * size,
+          lerp(a[2], c[2], b) * size,
+        ];
         if (morph <= 0) return sp;
-        // Uniform tube: axial from v (0..length), constant radius `thin`,
-        // only tapering to a closed end within the tiny CAP band at each pole.
+        // Uniform tube toward `ax`: axial from v, constant radius `thin`.
         const axial = (v / PI) * vLen;
         const rad = thin * Math.min(1, Math.min(v, PI - v) / CAP);
         const cu = Math.cos(u) * rad;
@@ -257,32 +303,25 @@ export class ClaySmash {
         resolution: this.resolution,
       });
       m.setColor(this.color);
-      // Spin the living ball; settle (stop spinning) as it locks into a vector.
-      m.rotate(timeSeconds * this.spin * (1 - morph), normAxis([0.3, 1, 0.25]));
+      if (spin) m.rotate(spin, normAxis([0.3, 1, 0.25]));
       return m;
     }
 
-    // 2D: uniform-width bar — axial from cos(t), constant ±thin perpendicular
-    // (sign from sin(t)); flat ends. Lerped with the smash outline.
-    const Ra = R2[fromIdx];
-    const Rb = R2[toIdx];
-    const px = -ax[1]; // perpendicular unit (in-plane)
+    // 2D outline.
+    const px = -ax[1];
     const py = ax[0];
     const verts = [];
     for (let i = 0; i < this.samples; i++) {
       const t = (i / this.samples) * TAU;
-      const dx = Math.cos(t);
-      const dy = Math.sin(t);
-      const rs = lerp(Ra(t), Rb(t), b) * size;
-      let x = dx * rs;
-      let y = dy * rs;
+      const a = fA(t);
+      const c = fB(t);
+      let x = lerp(a[0], c[0], b) * size;
+      let y = lerp(a[1], c[1], b) * size;
       if (morph > 0) {
-        const axial = ((dx + 1) / 2) * vLen;
-        const side = dy >= 0 ? thin : -thin;
-        const bx = ax[0] * axial + px * side;
-        const by = ax[1] * axial + py * side;
-        x = lerp(x, bx, morph);
-        y = lerp(y, by, morph);
+        const axial = ((Math.cos(t) + 1) / 2) * vLen;
+        const side = Math.sin(t) >= 0 ? thin : -thin;
+        x = lerp(x, ax[0] * axial + px * side, morph);
+        y = lerp(y, ax[1] * axial + py * side, morph);
       }
       verts.push([x, y, 0]);
     }

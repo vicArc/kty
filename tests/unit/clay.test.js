@@ -131,48 +131,54 @@ describe('ClayStretch (modeling-clay vector)', () => {
   });
 });
 
-describe('ClaySmash (living clay ball — radial deformation)', () => {
-  it('2D: returns a centred, filled outline at every phase of the cycle', () => {
+describe('ClaySmash (living clay ball — shape-sequence deformation)', () => {
+  it('2D: returns a centred, filled outline across the sequence (time + progress)', () => {
     const s = new ClaySmash({ color: '#b06a3c' });
     for (const t of [0, 0.2, 0.4, 0.6, 0.79]) {
-      const m = s.at(t);
+      const m = s.at({ time: t });
       expect(m.hasPoints()).toBe(true);
       expect(m.getCenter().map((n) => +n.toFixed(1))).toEqual([0, 0, 0]);
     }
+    for (const pr of [0, 0.33, 0.66, 1]) {
+      expect(s.at({ progress: pr }).hasPoints()).toBe(true);
+    }
   });
 
-  it('2D: the outline actually changes shape across the cycle (deformation)', () => {
-    // baseRadius/sizes fixed so only the support-radius shape varies; compare
-    // the width/height ratio at the round (circle) vs the polygon phase.
-    const s = new ClaySmash({ sizes: [1, 1, 1], baseRadius: 1 });
-    const circle = s.at(0); // pure circle
-    const hexish = s.at(1 / 6); // mid circle→hexagon
+  it('2D: the outline changes shape across the sequence (deformation)', () => {
+    const s = new ClaySmash({ baseRadius: 1 });
     const ratio = (m) => m.getWidth() / m.getHeight();
+    const circle = s.at({ progress: 0 }); // circle
+    const dona = s.at({ progress: 1 }); // oval "dona"
     expect(Math.abs(ratio(circle) - 1)).toBeLessThan(0.02); // ~round
-    expect(ratio(hexish)).not.toBeCloseTo(ratio(circle), 3); // deformed
+    expect(ratio(dona)).toBeGreaterThan(1.2); // oval (wider than tall)
   });
 
-  it('3D: returns a deformed surface mesh at every phase', () => {
+  it('3D: returns a deformed surface mesh across the sequence', () => {
     const s = new ClaySmash({ threeD: true });
-    for (const t of [0, 0.2, 0.5, 0.79]) {
-      const m = s.at(t);
+    for (const pr of [0, 0.34, 0.67, 1]) {
+      const m = s.at({ progress: pr });
       expect(m.renderType).toBe('surface');
       expect(m.hasPoints()).toBe(true);
     }
   });
 
   it('accepts any colour and a custom cycle time', () => {
-    expect(() => new ClaySmash({ color: '#ff00aa', cycle: 1.2 }).at(3.3)).not.toThrow();
+    expect(() => new ClaySmash({ color: '#ff00aa', cycle: 1.2 }).at({ time: 3.3 })).not.toThrow();
   });
 
-  it('continuously morphs the ball into a THIN directional vector', () => {
+  it('continuously morphs into a THIN uniform directional vector', () => {
     const s = new ClaySmash({ baseRadius: 0.7 });
-    const vec = s.at(0, { morph: 1, dir: [1, 0, 0], length: 5, thickness: 0.07 });
-    // Long along the axis, thin across it (a line, not a fat blob).
+    const vec = s.at({
+      progress: 1,
+      vec: { morph: 1, dir: [1, 0, 0], length: 5, thickness: 0.07 },
+    });
     expect(vec.getWidth()).toBeGreaterThan(4);
     expect(vec.getHeight()).toBeLessThan(0.4);
     const s3 = new ClaySmash({ threeD: true, baseRadius: 0.7 });
-    const v3 = s3.at(0, { morph: 1, dir: [1, 0, 0], length: 5, thickness: 0.07 });
+    const v3 = s3.at({
+      progress: 1,
+      vec: { morph: 1, dir: [1, 0, 0], length: 5, thickness: 0.07 },
+    });
     expect(v3.renderType).toBe('surface');
     expect(v3.getHeight()).toBeLessThan(0.4);
   });
